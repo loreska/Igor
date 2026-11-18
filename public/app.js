@@ -153,6 +153,16 @@ function controls(container, action, keys = Object.keys(buttons)) {
     container.append(button);
   }
 }
+function showReadingTimer(element, seconds, mirroredX = false, mirroredY = false) {
+  element.hidden = seconds == null;
+  if (seconds == null) return;
+  const value = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' +
+    String(seconds % 60).padStart(2, '0');
+  if (element.textContent !== value) element.textContent = value;
+  element.classList.toggle('timer-flip-x', mirroredX);
+  element.classList.toggle('timer-flip-y', mirroredY);
+}
+
 function showCountdown(element, value) {
   if (!value) { element.hidden = true; return; }
   if (!element.hidden && element.textContent === String(value)) return;
@@ -345,6 +355,7 @@ function runReceiver(auth, display = false, ready, expired) {
         $('waiting').hidden = state.open;
         monitor.hidden = !state.open;
         showCountdown($('remoteCountdown'), state.countdown);
+        showReadingTimer($('remoteReadingTimer'), state.timer, display && state.mirrorX, display && state.mirrorY);
         layout();
         if (!pointer && (state.seekId === pending?.id || performance.now() > pending?.until)) pending = undefined;
         if (!pending) {
@@ -421,6 +432,23 @@ function setup() {
   let speed = 52;
   let offset = 0;
   let playing = false;
+  let readingStartedAt = 0;
+  let readingElapsed = 0;
+  const timerToggle = $('showReadingTimer');
+  function elapsedSeconds(now = performance.now()) {
+    return Math.floor((readingElapsed + (playing ? now - readingStartedAt : 0)) / 1000);
+  }
+  function setPlaying(next, now = performance.now()) {
+    if (playing === next) return;
+    if (next) readingStartedAt = now;
+    else readingElapsed += now - readingStartedAt;
+    playing = next;
+  }
+  function resetReadingTimer() {
+    readingElapsed = 0;
+    readingStartedAt = performance.now();
+  }
+  $('resetReadingTimer').onclick = resetReadingTimer;
   let lastFrame = 0;
   let session = null;
   let wake = null;
@@ -483,7 +511,7 @@ function setup() {
     measure();
   }
   new ResizeObserver(fitPreview).observe(previewArea);
-  function showText() {
+  function showText(keepSlideTimer = false) {
     copy.replaceChildren();
     const markup = view() === 'text' && $('styled').checked && Boolean(source.html);
     copy.style.whiteSpace = markup ? 'normal' : 'pre-wrap';
@@ -498,14 +526,16 @@ function setup() {
     content = {revision:content.revision + 1, markup, editable, text:markup ? copy.innerHTML : copy.textContent};
     appliedSeekId = undefined;
     remoteHoldUntil = 0;
-    countdownUntil = 0;
     offset = 0;
-    playing = false;
+    if (!keepSlideTimer) {
+      countdownUntil = 0;
+      setPlaying(false);
+    }
     format();
   }
-  async function draw() {
+  async function draw(keepSlideTimer = false) {
     $('stage').dataset.view = view();
-    showText();
+    showText(keepSlideTimer);
     const version = ++renderVersion;
     if (!pdf || !['slide','both'].includes(view())) return;
     const item = await pdf.getPage(page);
@@ -525,13 +555,13 @@ function setup() {
     preview.getContext('2d').drawImage(canvas, 0, 0, preview.width, preview.height);
     content = {...content, revision:content.revision + 1, image:preview.toDataURL('image/jpeg', .82)};
   }
-  const refresh = () => draw().catch(() => say('Impossibile visualizzare questa pagina.'));
+  const refresh = (keepSlideTimer = false) => draw(keepSlideTimer === true).catch(() => say('Impossibile visualizzare questa pagina.'));
   function act(key, remote = false) {
-    if (key === 'play' && view() !== 'slide' && !$('screen').hidden && !playing && !countdownUntil) {
-      countdownUntil = performance.now() + 5000;
+    if (key === 'play' && (view() !== 'slide' || timerToggle.checked) && !$('screen').hidden && !playing && !countdownUntil) {
+      countdownUntil = performance.now() + 3000;
       remotelyStarted = remote;
     }
-    if (key === 'pause') { playing = false; countdownUntil = 0; }
+    if (key === 'pause') { setPlaying(false); countdownUntil = 0; }
     if (key === 'faster') speed = Math.min(400, speed + 10);
     if (key === 'slower') speed = Math.max(2, speed - 10);
     if (key === 'larger') { font = Math.min(160, font + 4); format(); }
@@ -541,7 +571,7 @@ function setup() {
     if (['next','prev'].includes(key) && view() !== 'text') {
       const target = page + (key === 'next' ? 1 : -1);
       const total = view() === 'notes' ? notes.length : pdf?.numPages;
-      if (target >= 1 && target <= total) { page = target; refresh(); }
+      if (target >= 1 && target <= total) { page = target; refresh(view() === 'slide'); }
     }
   }
   controls($('localControls'), key => act(key));
@@ -571,12 +601,17 @@ function setup() {
   previewArea.addEventListener('wheel', e => {e.preventDefault(); scroll(e.deltaY / previewScale);}, {passive:false});
   function frame(time) {
     if (remotelyStarted && offlineSince && time - offlineSince > 4000) act('pause');
-    if (countdownUntil && time >= countdownUntil) { countdownUntil = 0; playing = true; }
+    if (countdownUntil && time >= countdownUntil) {
+      setPlaying(view() !== 'slide' || timerToggle.checked, countdownUntil);
+      countdownUntil = 0;
+    }
+    showReadingTimer($('readingTimer'), timerToggle.checked ? elapsedSeconds(time) : null,
+      !session && $('mirrorX').checked, !session && $('mirrorY').checked);
     showCountdown($('countdown'), countdownUntil ? Math.ceil((countdownUntil - time) / 1000) : 0);
     const playLabel = playing || countdownUntil ? 'Pausa' : 'Avvia';
     if ($('screenPlay').textContent !== playLabel) $('screenPlay').textContent = playLabel;
-    if (playing && !localDrag && time >= remoteHoldUntil && !$('screen').hidden &&
-        scroll(Math.min(80, time - lastFrame) * speed / 1000)) playing = false;
+    if (playing && view() !== 'slide' && !localDrag && time >= remoteHoldUntil && !$('screen').hidden &&
+        scroll(Math.min(80, time - lastFrame) * speed / 1000)) setPlaying(false, time);
     lastFrame = time;
     requestAnimationFrame(frame);
   }
@@ -821,6 +856,7 @@ function setup() {
         viewport:rect(viewport), slide:content.image ? rect(slide) : null,
         font, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!$('screen').hidden,
         mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked,
+        timer:timerToggle.checked ? elapsedSeconds() : null,
         playing:playing && !localDrag && performance.now() >= remoteHoldUntil, seekId:appliedSeekId
       };
       const snapshot = JSON.stringify({state, status});
