@@ -54,3 +54,7 @@
 #viewerActions:hover,#viewerActions:focus-within{opacity:1}
 :fullscreen #viewerActions{opacity:0}
 :fullscreen #viewerActions:hover,:fullscreen #viewerActions:focus-within{opacity:1}
+
+.reading-timer{position:absolute;z-index:3;top:12px;right:12px;padding:.2em .42em;border-radius:.25em;background:#000d;color:#ff5656;font-size:clamp(20px,4.5vmin,44px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2;pointer-events:none;transform:scale(var(--timer-x,1),var(--timer-y,1))}
+.reading-timer.timer-flip-x{left:12px;right:auto;--timer-x:-1}
+.reading-timer.timer-flip-y{top:auto;bottom:12px;--timer-y:-1}
