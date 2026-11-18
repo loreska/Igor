@@ -53,7 +53,7 @@ Per aggiornare da una versione precedente, esegui di nuovo `npm install` in loca
 1. Dal telefono o dal PC apri Igor e carica il materiale. Premi **Abbina schermo**.
 2. Sul tablet apri Igor, scegli **Modalità schermo** e inserisci il codice. In alternativa scansiona il QR. Il codice dura cinque minuti, si usa una sola volta e non serve per le riconnessioni della stessa scheda.
 3. Dal telefono o dal PC premi **Avvia il gobbo**. Da qui puoi avviare, mettere in pausa, regolare velocità e caratteri, scorrere il copione o cambiare slide. Igor apre una vista dedicata al controllo. Premi **Torna al materiale** per modificare i file o la specchiatura.
-4. Per aprire direttamente la schermata con il codice, aggiungi `?schermo=1` all’indirizzo di Igor. Sul tablet trascina il testo per scorrere. Tocca una volta per mettere in pausa o riprendere, oppure due volte per aprire le opzioni di lettura. Puoi usare **Schermo intero** quando il browser lo supporta. Il pannello comandi indica se il collegamento è **Diretto** o **Via server**.
+4. Per aprire direttamente la schermata con il codice, aggiungi `?schermo=1` all’indirizzo di Igor. Sul tablet trascina il testo per scorrere. Tocca una volta per mettere in pausa o riprendere, oppure due volte per aprire le opzioni di lettura. Il pannello comandi indica se il collegamento è **Diretto** o **Via server**.
 ## Importazione e tasti
 
 - Word DOCX conserva formattazione strutturale come titoli, grassetto, corsivo ed elenchi. Togli la spunta alla formattazione per il testo semplice.
@@ -74,3 +74,7 @@ Il file PPTX viene elaborato dal browser del dispositivo. Il limite del PPTX da 
 - Per creare il repository, estrai l'archivio e caricane i file alla radice, inclusi `.gitignore` e `.dockerignore`. Conserva `package-lock.json`. Tieni configurazioni locali, credenziali e `.env` fuori dal repository.
 - Per aggiornare il VPS esistente, conserva il suo `.env`, aggiorna i sorgenti, poi esegui `docker compose -f compose.yaml -f compose.caddy.yaml up -d --build`. Durante il riavvio le sessioni attive vanno abbinate di nuovo.
 
+
+### Uso con un solo dispositivo
+
+Apri la pagina principale sul tablet, carica il materiale e scegli **Leggi su questo dispositivo**. Un tocco breve avvia o mette in pausa, il trascinamento scorre il copione e due tocchi rapidi aprono le opzioni. Da quelle opzioni puoi anche tornare al materiale.
