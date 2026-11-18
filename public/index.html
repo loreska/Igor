@@ -25,7 +25,7 @@
 </section>
 <section class="studio-card studio-session" aria-labelledby="sessionTitle">
 <h2 id="sessionTitle">Sessione gobbo</h2>
-<div class="studio-actions"><button id="pair" type="button">Abbina schermo</button><button id="launch" class="studio-primary">Avvia il gobbo</button></div>
+<div class="studio-actions"><button id="pair" type="button">Abbina schermo</button><button id="launch" class="studio-primary">Avvia il gobbo</button><button id="soloLaunch">Leggi su questo dispositivo</button></div>
 <div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
 </section>
 </div>
@@ -46,23 +46,14 @@
 <div class="row"><input id="screenCode" type="text" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocomplete="off" autocapitalize="characters" spellcheck="false" required><button class="studio-primary" type="submit">Collega schermo</button></div>
 </form>
 <p id="joinStatus" role="status"></p>
-<a href="./">Torna ai comandi</a>
+<a href="./">Carica materiale su questo dispositivo</a>
 </section>
 </main>
 <main id="remote" hidden>
 <header class="igor-operator"><img src="igor.png" width="30" height="30" alt=""><strong>Igor</strong><span>Pannello operatore</span></header>
 <p id="connection" role="status">Connessione in corso…</p>
 <p id="waiting" hidden>Lo schermo del gobbo non è ancora aperto sul tablet.</p>
-<dialog id="viewerSettings" aria-labelledby="viewerSettingsTitle">
-<form method="dialog" class="viewer-settings">
-<h2 id="viewerSettingsTitle">Opzioni gobbo</h2>
-<div class="viewer-setting"><span>Dimensione testo</span><button type="button" data-gobbo-command="smaller" aria-label="Riduci dimensione testo">−</button><output id="viewerFont"></output><button type="button" data-gobbo-command="larger" aria-label="Aumenta dimensione testo">+</button></div>
-<div class="viewer-setting"><span>Velocità</span><button type="button" data-gobbo-command="slower" aria-label="Rallenta">−</button><output id="viewerSpeed"></output><button type="button" data-gobbo-command="faster" aria-label="Accelera">+</button></div>
-<fieldset class="studio-mirror"><legend>Specchiatura</legend><label><input type="checkbox" id="viewerMirrorX"> Orizzontale</label><label><input type="checkbox" id="viewerMirrorY"> Verticale</label></fieldset>
-<label><input type="checkbox" id="viewerTimer"> Mostra timer</label>
-<button class="studio-primary" type="submit">Chiudi opzioni</button>
-</form></dialog>
-<div id="viewerActions" hidden><button id="viewerOptions" aria-label="Apri opzioni gobbo">Opzioni</button><button id="viewerFull">Schermo intero</button><a href="?schermo=1">Cambia collegamento</a></div>
+
 <div id="monitor" aria-label="Anteprima gobbo, trascina per scorrere">
 <div id="monitorStage"><img id="monitorSlide" alt="" hidden><div id="monitorViewport"><article class="script" id="monitorCopy"></article><div class="reading-line"></div></div></div>
 <div class="countdown" id="remoteCountdown" hidden></div>
@@ -74,4 +65,13 @@
 <button id="sendEdit">Invia correzione</button> <span id="editStatus" role="status"></span>
 </details></main>
 
+<dialog id="viewerSettings" aria-labelledby="viewerSettingsTitle">
+<form method="dialog" class="viewer-settings">
+<h2 id="viewerSettingsTitle">Opzioni gobbo</h2>
+<div class="viewer-setting"><span>Dimensione testo</span><button type="button" data-gobbo-command="smaller" aria-label="Riduci dimensione testo">−</button><output id="viewerFont"></output><button type="button" data-gobbo-command="larger" aria-label="Aumenta dimensione testo">+</button></div>
+<div class="viewer-setting"><span>Velocità</span><button type="button" data-gobbo-command="slower" aria-label="Rallenta">−</button><output id="viewerSpeed"></output><button type="button" data-gobbo-command="faster" aria-label="Accelera">+</button></div>
+<fieldset class="studio-mirror"><legend>Specchiatura</legend><label><input type="checkbox" id="viewerMirrorX"> Orizzontale</label><label><input type="checkbox" id="viewerMirrorY"> Verticale</label></fieldset>
+<label><input type="checkbox" id="viewerTimer"> Mostra timer</label>
+<div class="row"><button class="studio-primary" type="submit">Chiudi opzioni</button><button id="soloReturn" type="button" hidden>Torna al materiale</button></div>
+</form></dialog>
 </body></html>
