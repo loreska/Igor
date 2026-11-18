@@ -29,6 +29,12 @@
 <div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
 </section>
 </div>
+<section class="studio-card local-recovery" aria-labelledby="recoveryTitle">
+<h2 id="recoveryTitle">Sul dispositivo</h2>
+<button id="resumeLocal" type="button" class="studio-primary" hidden>Riprendi ultima sessione</button>
+<details id="localRecent" hidden><summary>Recenti</summary><ul id="localRecentList"></ul></details>
+<p id="localRecoveryStatus" role="status"></p>
+</section>
 <footer class="igor-quote"><q>Quale gobba?</q></footer>
 </main>
 <section id="screen" hidden aria-labelledby="gobboTitle">
