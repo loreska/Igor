@@ -754,40 +754,37 @@ function setup() {
       dialog.showModal();
     });
   }
-  async function importPowerPoint(input, convert) {
+  async function importPowerPoint(input) {
     const file = input.files[0];
     if (!file) return;
-    const fileInputs = ['file','slidesFile','notesFile'].map($);
+    const fileInputs = ['file','slidesFile'].map($);
     imports++;
     $('launch').disabled = true;
     fileInputs.forEach(element => { element.disabled = true; });
-    say(convert ? 'Conversione del PowerPoint in corso…' : 'Importazione delle note…');
+    say('Conversione del PowerPoint in corso…');
     try {
-      if (convert && file.size > 40 * 1024 * 1024) throw new Error('Il PowerPoint supera il limite di 40 MB.');
-      if (convert && (!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined')) {
+      if (file.size > 40 * 1024 * 1024) throw new Error('Il PowerPoint supera il limite di 40 MB.');
+      if ((!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined')) {
         throw new Error('La conversione locale richiede un browser compatibile e una pagina HTTPS. Puoi caricare un PDF in Slide.');
       }
-      if (convert && !converter && !await confirmConverterDownload()) {
+      if (!converter && !await confirmConverterDownload()) {
         say('Download annullato. Puoi caricare un PDF in Slide.');
         return;
       }
       const imported = await readPowerPointNotes(file);
-      if (convert) {
-        try {
-          say('Caricamento del convertitore PowerPoint…');
-          pdf = await convertLocally(file);
-        } catch {
-          throw new Error('Conversione non riuscita su questo dispositivo. Riprova oppure carica un PDF in Slide.');
-        }
+      try {
+        say('Caricamento del convertitore PowerPoint…');
+        pdf = await convertLocally(file);
+      } catch {
+        throw new Error('Conversione non riuscita su questo dispositivo. Riprova oppure carica un PDF in Slide.');
       }
       const matching = !pdf || pdf.numPages === imported.length;
-      notes = matching || !convert ? imported : [];
+      notes = matching ? imported : [];
       page = 1;
-      $('view').value = convert ? 'slide' : pdf ? 'both' : 'notes';
+      $('view').value = 'slide';
       await draw();
       if (!matching) say('Il numero di pagine PDF e di slide PowerPoint è diverso. Verifica la corrispondenza prima di usare le note.');
-      else if (convert) say(imported.some(Boolean) ? 'Slide caricate. Seleziona Slide + note per mostrare anche le note del relatore.' : 'Slide caricate. Puoi aprire lo schermo.');
-      else say('Note importate.');
+      else say(imported.some(Boolean) ? 'Slide caricate. Seleziona Slide + note per mostrare anche le note del relatore.' : 'Slide caricate. Puoi aprire lo schermo.');
     } catch (error) {
       say(error.name === 'TimeoutError' ? 'Tempo di conversione scaduto. Riprova o carica un PDF in Slide.' :
         error.message || 'Impossibile importare il PowerPoint.');
@@ -798,12 +795,11 @@ function setup() {
     }
   }
   $('file').onchange = event => importDocument(event.currentTarget.files[0]);
-  $('notesFile').onchange = event => importPowerPoint(event.currentTarget, false);
   $('slidesFile').onchange = event => {
     const input = event.currentTarget;
     const file = input.files[0];
     if (!file) return;
-    if (/\.pptx$/i.test(file.name)) return importPowerPoint(input, true);
+    if (/\.pptx$/i.test(file.name)) return importPowerPoint(input);
     if (/\.pdf$/i.test(file.name)) return importDocument(file, true);
     say('Scegli una presentazione PDF o PowerPoint (.pptx).');
   };
