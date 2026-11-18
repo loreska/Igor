@@ -153,6 +153,28 @@ function controls(container, action, keys = Object.keys(buttons)) {
     container.append(button);
   }
 }
+function readingTap(onSingle, onDouble) {
+  let waiting;
+  function cancel() {
+    clearTimeout(waiting);
+    waiting = undefined;
+  }
+  return {
+    cancel,
+    tap() {
+      if (waiting !== undefined) {
+        cancel();
+        onDouble();
+      } else {
+        waiting = setTimeout(() => {
+          waiting = undefined;
+          onSingle();
+        }, 290);
+      }
+    }
+  };
+}
+
 function showReadingTimer(element, seconds, mirroredX = false, mirroredY = false) {
   element.hidden = seconds == null;
   if (seconds == null) return;
@@ -238,7 +260,6 @@ function runReceiver(auth, display = false, ready, expired) {
   let seek;
   let pending;
   let pointer;
-  let tapTimer;
   let controlInterval;
   const viewerSettings = $('viewerSettings');
   let edit;
@@ -289,21 +310,10 @@ function runReceiver(auth, display = false, ready, expired) {
     seek = {offset:target, revision, id:seekId(), held};
     pending = {...seek, until:performance.now() + 4000};
   }
-  function openViewerSettings() {
-    clearTimeout(tapTimer);
-    tapTimer = undefined;
-    if (!viewerSettings.open) viewerSettings.showModal();
-  }
-  function viewerTap() {
-    if (tapTimer !== undefined) {
-      openViewerSettings();
-      return;
-    }
-    tapTimer = setTimeout(() => {
-      tapTimer = undefined;
-      if (connected && state?.open && !viewerSettings.open) commands.push('toggle');
-    }, 290);
-  }
+  const taps = readingTap(
+    () => { if (connected && state?.open && !viewerSettings.open) commands.push('toggle'); },
+    () => { if (!viewerSettings.open) viewerSettings.showModal(); }
+  );
   monitor.onpointerdown = event => {
     if (!connected || !state?.open || (!display && !state.viewport.w) ||
         pointer || !event.isPrimary || event.button !== 0) return;
@@ -316,8 +326,7 @@ function runReceiver(auth, display = false, ready, expired) {
     const dy = pointer.start - event.clientY;
     if (Math.abs(dy) >= 8 || Math.abs(pointer.x - event.clientX) >= 8) {
       pointer.moved = true;
-      clearTimeout(tapTimer);
-      tapTimer = undefined;
+      taps.cancel();
     }
     if (display && (!state?.viewport.w || (!pointer.dragging && Math.abs(dy) < 8))) return;
     pointer.dragging = true;
@@ -328,7 +337,7 @@ function runReceiver(auth, display = false, ready, expired) {
     const last = pointer;
     pointer = null;
     if (last.dragging || !display) dragTo(offset);
-    else if (tap && !last.moved && performance.now() - last.downAt < 350) viewerTap();
+    else if (tap && !last.moved && performance.now() - last.downAt < 350) taps.tap();
   }
   monitor.onpointerup = event => finishPointer(event, true);
   monitor.onpointercancel = monitor.onlostpointercapture = event => finishPointer(event, false);
@@ -421,7 +430,7 @@ function runReceiver(auth, display = false, ready, expired) {
   }, error => {
     if (display) {
       clearInterval(controlInterval);
-      clearTimeout(tapTimer);
+      taps.cancel();
       if (viewerSettings.open) viewerSettings.close();
       observer.disconnect();
       removeEventListener('resize', sendSize);
@@ -433,14 +442,11 @@ function runReceiver(auth, display = false, ready, expired) {
     send({type:'control', displaySize:{width:innerWidth, height:innerHeight}});
   }
   if (display) {
-    $('viewerActions').hidden = false;
     monitor.hidden = true;
     $('waiting').hidden = true;
     $('waiting').textContent = 'In attesa che il dispositivo di controllo apra l’anteprima.';
     $('remoteEditor').hidden = true;
     $('connection').textContent = 'Collegamento in corso…';
-    $('viewerFull').hidden = !document.fullscreenEnabled;
-    $('viewerFull').onclick = () => document.documentElement.requestFullscreen?.().catch(() => {});
     async function keepDisplayAwake() {
       if (!document.hidden && !$('remote').hidden) {
         try { await navigator.wakeLock?.request('screen'); } catch {}
@@ -449,7 +455,6 @@ function runReceiver(auth, display = false, ready, expired) {
     keepDisplayAwake();
     document.addEventListener('visibilitychange', keepDisplayAwake);
     addEventListener('resize', sendSize);
-    $('viewerOptions').onclick = openViewerSettings;
     for (const button of viewerSettings.querySelectorAll('[data-gobbo-command]')) {
       button.onclick = () => { if (connected && commands.length < 8) commands.push(button.dataset.gobboCommand); };
     }
@@ -515,6 +520,34 @@ function setup() {
   let localDrag;
   let imports = 0;
   let displaySize;
+  let soloMode = false;
+  const soloButton = $('soloLaunch');
+  const soloSettings = $('viewerSettings');
+  const soloTaps = readingTap(
+    () => { if (soloMode && !$('screen').hidden && !soloSettings.open) act(playing || countdownUntil ? 'pause' : 'play'); },
+    () => {
+      if (soloSettings.open) return;
+      syncSoloSettings();
+      soloSettings.showModal();
+    }
+  );
+  function syncSoloSettings() {
+    $('viewerFont').textContent = font;
+    $('viewerSpeed').textContent = speed + ' px/s';
+    $('viewerMirrorX').checked = $('mirrorX').checked;
+    $('viewerMirrorY').checked = $('mirrorY').checked;
+    $('viewerTimer').checked = timerToggle.checked;
+  }
+  for (const button of soloSettings.querySelectorAll('[data-gobbo-command]')) {
+    button.onclick = () => { act(button.dataset.gobboCommand); syncSoloSettings(); };
+  }
+  for (const [id, target] of Object.entries({viewerMirrorX:'mirrorX', viewerMirrorY:'mirrorY', viewerTimer:'showReadingTimer'})) {
+    $(id).onchange = () => { $(target).checked = $(id).checked; fitPreview(); };
+  }
+  $('soloReturn').onclick = () => {
+    soloSettings.close();
+    $('exit').click();
+  };
   let previewScale = 1;
   const previewArea = $('previewArea');
   const view = () => $('view').value;
@@ -538,8 +571,8 @@ function setup() {
     measure();
   }
   function fitPreview() {
-    const w = displaySize?.width || previewArea.clientWidth;
-    const h = displaySize?.height || previewArea.clientHeight;
+    const w = (!soloMode && displaySize?.width) || previewArea.clientWidth;
+    const h = (!soloMode && displaySize?.height) || previewArea.clientHeight;
     if (!w || !h || !previewArea.clientWidth || !previewArea.clientHeight) return;
     previewScale = Math.min(previewArea.clientWidth / w, previewArea.clientHeight / h);
     Object.assign(stage.style, {
@@ -549,7 +582,7 @@ function setup() {
       transform:'scale(' + previewScale + ')',
       transformOrigin:'top left'
     });
-    if (!session) {
+    if (!session || soloMode) {
       stage.style.transformOrigin = 'center';
       stage.style.transform += ' scale(' + ($('mirrorX').checked ? -1 : 1) + ',' + ($('mirrorY').checked ? -1 : 1) + ')';
     }
@@ -630,19 +663,32 @@ function setup() {
     event.preventDefault();
     act(event.key === ' ' ? (playing || countdownUntil ? 'pause' : 'play') : keys[event.key]);
   });
-  viewport.onpointerdown = event => {
-    if (!event.isPrimary || event.button !== 0 || localDrag) return;
-    localDrag = {id:event.pointerId, y:event.clientY, offset};
-    viewport.setPointerCapture(event.pointerId);
+  previewArea.onpointerdown = event => {
+    if (!event.isPrimary || event.button !== 0 || localDrag || (!soloMode && !viewport.contains(event.target))) return;
+    localDrag = {id:event.pointerId, x:event.clientX, y:event.clientY, offset, downAt:performance.now(), moved:false};
+    previewArea.setPointerCapture(event.pointerId);
   };
-  viewport.onpointermove = event => {
+  previewArea.onpointermove = event => {
     if (localDrag?.id !== event.pointerId) return;
-    const delta = (localDrag.y - event.clientY) / previewScale;
-    scroll(localDrag.offset + delta - offset);
+    const dy = localDrag.y - event.clientY;
+    if (Math.abs(dy) >= 8 || Math.abs(localDrag.x - event.clientX) >= 8) {
+      localDrag.moved = true;
+      soloTaps.cancel();
+    }
+    if ((!soloMode || localDrag.moved) && view() !== 'slide') {
+      const direction = soloMode && $('mirrorY').checked ? -1 : 1;
+      scroll(localDrag.offset + direction * dy / previewScale - offset);
+    }
   };
-  viewport.onlostpointercapture = () => { localDrag = undefined; };
+  previewArea.onpointerup = event => {
+    if (localDrag?.id !== event.pointerId) return;
+    const drag = localDrag;
+    localDrag = undefined;
+    if (soloMode && !drag.moved && performance.now() - drag.downAt < 350) soloTaps.tap();
+  };
+  previewArea.onpointercancel = previewArea.onlostpointercapture = () => { localDrag = undefined; };
   previewArea.ondblclick = event => {
-    if (event.pointerType !== 'touch') act(playing || countdownUntil ? 'pause' : 'play');
+    if (!soloMode && event.pointerType !== 'touch') act(playing || countdownUntil ? 'pause' : 'play');
   };
   $('screenPlay').onclick = () => act(playing || countdownUntil ? 'pause' : 'play');
   previewArea.addEventListener('wheel', e => {e.preventDefault(); scroll(e.deltaY / previewScale);}, {passive:false});
@@ -653,7 +699,7 @@ function setup() {
       countdownUntil = 0;
     }
     showReadingTimer($('readingTimer'), timerToggle.checked ? elapsedSeconds(time) : null,
-      !session && $('mirrorX').checked, !session && $('mirrorY').checked);
+      (!session || soloMode) && $('mirrorX').checked, (!session || soloMode) && $('mirrorY').checked);
     showCountdown($('countdown'), countdownUntil ? Math.ceil((countdownUntil - time) / 1000) : 0);
     const playLabel = playing || countdownUntil ? 'Pausa' : 'Avvia';
     if ($('screenPlay').textContent !== playLabel) $('screenPlay').textContent = playLabel;
@@ -670,23 +716,31 @@ function setup() {
     }
   }
   document.addEventListener('visibilitychange', keepAwake);
-  $('launch').onclick = () => {
+  function launch(solo) {
     if (view() === 'text' && $('draft').value !== source.text) loadDraft();
     if (['slide','both'].includes(view()) && !pdf) return say('Carica prima il PDF delle slide.');
     if (view() === 'notes' && !notes.length) return say('Carica prima il PowerPoint con le note.');
+    soloMode = solo;
+    $('screen').classList.toggle('solo-mode', solo);
+    $('soloReturn').hidden = !solo;
     $('setup').hidden = true;
     $('screen').hidden = false;
-    $('screenPlay').focus({preventScroll:true});
+    if (solo) document.documentElement.requestFullscreen?.().catch(() => {});
+    else $('screenPlay').focus({preventScroll:true});
     keepAwake();
     fitPreview();
-  };
+  }
+  $('launch').onclick = () => launch(false);
+  soloButton.onclick = () => launch(true);
   $('exit').onclick = () => {
     act('pause');
     localDrag = undefined;
     remoteHoldUntil = 0;
     $('screen').hidden = true;
     $('setup').hidden = false;
-    $('launch').focus();
+    (soloMode ? soloButton : $('launch')).focus();
+    soloMode = false;
+    soloTaps.cancel();
     wake?.release().catch(() => {});
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
@@ -714,7 +768,7 @@ function setup() {
     const ext = file.name.split('.').pop().toLowerCase();
     say('Importazione in corso…');
     imports++;
-    $('launch').disabled = true;
+    $('launch').disabled = soloButton.disabled = true;
     try {
       if (ext === 'docx') {
         const arrayBuffer = await file.arrayBuffer();
@@ -746,7 +800,7 @@ function setup() {
       await draw();
       say(!isDeck && ext === 'pdf' && !source.text ? 'PDF caricato come slide. Nessun testo selezionabile trovato.' : 'File caricato. Puoi aprire lo schermo.');
     } catch { say('Importazione non riuscita. Verifica il formato del file.'); }
-    finally { $('launch').disabled = --imports > 0; }
+    finally { $('launch').disabled = soloButton.disabled = --imports > 0; }
   }
 
   async function readPowerPointNotes(file) {
@@ -812,7 +866,7 @@ function setup() {
     if (!file) return;
     const fileInputs = ['file','slidesFile'].map($);
     imports++;
-    $('launch').disabled = true;
+    $('launch').disabled = soloButton.disabled = true;
     fileInputs.forEach(element => { element.disabled = true; });
     say('Conversione del PowerPoint in corso…');
     try {
@@ -844,7 +898,7 @@ function setup() {
     } finally {
       input.value = '';
       fileInputs.forEach(element => { element.disabled = false; });
-      $('launch').disabled = --imports > 0;
+      $('launch').disabled = soloButton.disabled = --imports > 0;
     }
   }
   $('file').onchange = event => importDocument(event.currentTarget.files[0]);
@@ -903,7 +957,7 @@ function setup() {
       const state = {
         revision:content.revision, view:view(), width:stage.clientWidth, height:stage.clientHeight,
         viewport:rect(viewport), slide:content.image ? rect(slide) : null,
-        font, speed, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!$('screen').hidden,
+        font, speed, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!soloMode && !$('screen').hidden,
         mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked,
         timer:timerToggle.checked ? elapsedSeconds() : null,
         playing:playing && !localDrag && performance.now() >= remoteHoldUntil, seekId:appliedSeekId
@@ -916,7 +970,7 @@ function setup() {
       }
   }
   function applyControl(message) {
-    if (message.type !== 'control') return;
+    if (soloMode || message.type !== 'control') return;
     const size = message.displaySize;
     if (size && [size.width, size.height].every(value => Number.isFinite(value) && value >= 160 && value <= 4096)) {
       displaySize = size;
