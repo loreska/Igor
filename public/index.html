@@ -5,7 +5,7 @@
 <header class="igor-brand">
 <img src="igor.png" width="82" height="82" alt="">
 <div><h1>Igor</h1><p lang="en">It Goes On Reading</p></div>
-<div class="studio-links"><a class="studio-screen-link" href="?schermo=1">Modalità schermo</a><button id="pair" type="button">Abbina schermo</button></div>
+<div class="studio-links"><a class="studio-screen-link" href="?schermo=1">Modalità schermo</a></div>
 </header>
 <div class="studio-workspace">
 <section class="studio-card studio-material" aria-labelledby="materialTitle">
@@ -20,21 +20,22 @@
 <label for="draft" class="studio-label">Testo del gobbo</label><textarea id="draft" rows="5" placeholder="Incolla o scrivi il copione"></textarea>
 <div class="row"><button id="apply">Carica testo</button><label><input type="checkbox" id="styled" checked> Mantieni formattazione Word</label><label>Vista <select id="view"><option value="text">Gobbo</option><option value="slide">Slide</option><option value="both">Slide + note</option><option value="notes">Solo note</option></select></label></div>
 <fieldset class="studio-mirror"><legend>Specchiatura</legend><label><input type="checkbox" id="mirrorX"> Orizzontale</label><label><input type="checkbox" id="mirrorY"> Verticale</label></fieldset>
-<div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
 <p id="message" role="status"></p>
 <div id="localControls" hidden></div>
 </section>
-<section id="studioMonitor" class="studio-card studio-monitor" aria-labelledby="monitorTitle">
-<div class="studio-monitor-head"><h2 id="monitorTitle">Anteprima</h2><button id="launch" class="studio-primary">Apri anteprima</button></div>
-<div id="previewEmpty">Carica un copione o delle slide per iniziare.</div>
-<section id="screen" hidden aria-label="Anteprima del gobbo">
-<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div><div class="reading-timer" id="readingTimer" aria-label="Tempo trascorso" hidden></div></div>
-<div id="previewBar"><output id="previewStatus" role="status"></output><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><label><input id="showReadingTimer" type="checkbox"> Mostra timer</label><button id="resetReadingTimer">Azzera timer</button><button id="exit">Chiudi anteprima</button></div></div>
-</section>
+<section class="studio-card studio-session" aria-labelledby="sessionTitle">
+<h2 id="sessionTitle">Sessione gobbo</h2>
+<div class="studio-actions"><button id="pair" type="button">Abbina schermo</button><button id="launch" class="studio-primary">Avvia il gobbo</button></div>
+<div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
 </section>
 </div>
 <footer class="igor-quote"><q>Quale gobba?</q></footer>
 </main>
+<section id="screen" hidden aria-labelledby="gobboTitle">
+<header class="gobbo-header"><div><h1 id="gobboTitle">Controllo gobbo</h1><output id="previewStatus" role="status"></output></div><button id="exit">Torna al materiale</button></header>
+<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div><div class="reading-timer" id="readingTimer" aria-label="Tempo trascorso" hidden></div></div>
+<div id="previewBar"><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><label><input id="showReadingTimer" type="checkbox"> Mostra timer</label><button id="resetReadingTimer">Azzera timer</button></div></div>
+</section>
 <main id="joinScreen" hidden>
 <section class="studio-card studio-join">
 <img src="igor.png" width="56" height="56" alt="">
