@@ -52,7 +52,7 @@ Per aggiornare da una versione precedente, esegui di nuovo `npm install` in loca
 
 1. Dal telefono o dal PC apri Igor e carica il materiale. Premi **Abbina schermo**.
 2. Sul tablet apri Igor, scegli **Modalità schermo** e inserisci il codice. In alternativa scansiona il QR. Il codice dura cinque minuti, si usa una sola volta e non serve per le riconnessioni della stessa scheda.
-3. Dal telefono o dal PC premi **Apri anteprima**. Da qui puoi avviare, mettere in pausa, regolare velocità e caratteri, scorrere il copione o cambiare slide. Materiale e specchiatura restano disponibili accanto all’anteprima su desktop e sotto di essa su telefono.
+3. Dal telefono o dal PC premi **Avvia il gobbo**. Da qui puoi avviare, mettere in pausa, regolare velocità e caratteri, scorrere il copione o cambiare slide. Igor apre una vista dedicata al controllo. Premi **Torna al materiale** per modificare i file o la specchiatura.
 4. Per aprire direttamente la schermata con il codice, aggiungi `?schermo=1` all’indirizzo di Igor. Sul tablet puoi usare **Schermo intero** quando il browser lo supporta. Il pannello comandi indica se il collegamento è **Diretto** o **Via server**.
 ## Importazione e tasti
 
