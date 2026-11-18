@@ -113,3 +113,12 @@ input[type=checkbox]{accent-color:var(--studio-gold)}
 #screen.solo-mode .gobbo-header,#screen.solo-mode #previewBar{display:none}
 #screen.solo-mode #previewArea{touch-action:none;user-select:none}
 .viewer-settings .row{margin:0}
+
+.local-recovery{margin-top:16px}
+.local-recovery details{margin-top:10px}
+.local-recovery summary{cursor:pointer}
+#localRecentList{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:7px}
+#localRecentList li{display:flex;gap:8px;justify-content:space-between}
+#localRecentList li button:first-child{overflow-wrap:anywhere;text-align:left}
+#localRecoveryStatus{color:var(--studio-muted);margin:8px 0 0}
+#localRecoveryStatus:empty{display:none}
