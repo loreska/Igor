@@ -51,9 +51,9 @@ Per aggiornare da una versione precedente, esegui di nuovo `npm install` in loca
 ## Uso con telefono, PC e tablet
 
 1. Dal telefono o dal PC apri Igor e carica il materiale. Premi **Abbina schermo**.
-2. Sul tablet apri Igor, scegli **Usa questo dispositivo come schermo del gobbo** e inserisci il codice. In alternativa scansiona il QR. Il codice dura cinque minuti, si usa una sola volta e non serve per le riconnessioni della stessa scheda.
-3. Dal telefono o dal PC premi **Apri anteprima**. Da qui puoi avviare, mettere in pausa, regolare velocità e caratteri, scorrere il copione o cambiare slide. **Materiale e impostazioni** riapre i caricamenti e la specchiatura dello schermo.
-4. Sul tablet puoi usare **Schermo intero** quando il browser lo supporta. Il pannello comandi indica se il collegamento è **Diretto** o **Via server**.
+2. Sul tablet apri Igor, scegli **Modalità schermo** e inserisci il codice. In alternativa scansiona il QR. Il codice dura cinque minuti, si usa una sola volta e non serve per le riconnessioni della stessa scheda.
+3. Dal telefono o dal PC premi **Apri anteprima**. Da qui puoi avviare, mettere in pausa, regolare velocità e caratteri, scorrere il copione o cambiare slide. Materiale e specchiatura restano disponibili accanto all’anteprima su desktop e sotto di essa su telefono.
+4. Per aprire direttamente la schermata con il codice, aggiungi `?schermo=1` all’indirizzo di Igor. Sul tablet puoi usare **Schermo intero** quando il browser lo supporta. Il pannello comandi indica se il collegamento è **Diretto** o **Via server**.
 ## Importazione e tasti
 
 - Word DOCX conserva formattazione strutturale come titoli, grassetto, corsivo ed elenchi. Togli la spunta alla formattazione per il testo semplice.
