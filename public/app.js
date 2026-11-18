@@ -579,7 +579,8 @@ function setup() {
   const keys = {' ':'toggle', ArrowUp:'back', ArrowDown:'forward', ArrowRight:'next',
     ArrowLeft:'prev', PageUp:'prev', PageDown:'next', '+':'faster', '-':'slower', Home:'home'};
   document.addEventListener('keydown', event => {
-    if ($('screen').hidden || !Object.hasOwn(keys,event.key)) return;
+    if ($('screen').hidden || !Object.hasOwn(keys,event.key) ||
+        event.target.closest?.('input, textarea, select, button, a, [contenteditable]')) return;
     event.preventDefault();
     act(event.key === ' ' ? (playing || countdownUntil ? 'pause' : 'play') : keys[event.key]);
   });
@@ -627,8 +628,11 @@ function setup() {
     if (view() === 'text' && $('draft').value !== source.text) loadDraft();
     if (['slide','both'].includes(view()) && !pdf) return say('Carica prima il PDF delle slide.');
     if (view() === 'notes' && !notes.length) return say('Carica prima il PowerPoint con le note.');
-    $('setup').hidden = true;
     $('screen').hidden = false;
+    $('previewEmpty').hidden = true;
+    $('launch').hidden = true;
+    $('screenPlay').focus({preventScroll:true});
+    $('studioMonitor').scrollIntoView({block:'nearest'});
     keepAwake();
     fitPreview();
   };
@@ -637,7 +641,9 @@ function setup() {
     localDrag = undefined;
     remoteHoldUntil = 0;
     $('screen').hidden = true;
-    $('setup').hidden = false;
+    $('previewEmpty').hidden = false;
+    $('launch').hidden = false;
+    $('launch').focus();
     wake?.release().catch(() => {});
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
