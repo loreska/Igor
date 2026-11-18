@@ -238,6 +238,9 @@ function runReceiver(auth, display = false, ready, expired) {
   let seek;
   let pending;
   let pointer;
+  let tapTimer;
+  let controlInterval;
+  const viewerSettings = $('viewerSettings');
   let edit;
   let editRevision;
   let editable;
@@ -279,29 +282,56 @@ function runReceiver(auth, display = false, ready, expired) {
   const observer = new ResizeObserver(layout);
   observer.observe(monitor);
   function dragTo(value, held = false) {
-    if (display || !connected || !state?.viewport.w || state.revision !== revision) return;
+    if (!connected || !state?.viewport.w || state.revision !== revision) return;
     const target = Math.min(state.max, Math.max(0, value));
     copy.style.transition = 'none';
     position(target);
     seek = {offset:target, revision, id:seekId(), held};
     pending = {...seek, until:performance.now() + 4000};
   }
+  function openViewerSettings() {
+    clearTimeout(tapTimer);
+    tapTimer = undefined;
+    if (!viewerSettings.open) viewerSettings.showModal();
+  }
+  function viewerTap() {
+    if (tapTimer !== undefined) {
+      openViewerSettings();
+      return;
+    }
+    tapTimer = setTimeout(() => {
+      tapTimer = undefined;
+      if (connected && state?.open && !viewerSettings.open) commands.push('toggle');
+    }, 290);
+  }
   monitor.onpointerdown = event => {
-    if (!connected || !state?.viewport.w || pointer || !event.isPrimary || event.button !== 0) return;
-    pointer = {id:event.pointerId, start:event.clientY, offset};
+    if (!connected || !state?.open || (!display && !state.viewport.w) ||
+        pointer || !event.isPrimary || event.button !== 0) return;
+    pointer = {id:event.pointerId, x:event.clientX, start:event.clientY, offset, downAt:performance.now(), moved:false, dragging:false};
     monitor.setPointerCapture(event.pointerId);
-    dragTo(offset, true);
+    if (!display) dragTo(offset, true);
   };
   monitor.onpointermove = event => {
-    if (pointer?.id === event.pointerId && scale > 0) {
-      dragTo(pointer.offset + (pointer.start - event.clientY) / scale, true);
+    if (pointer?.id !== event.pointerId || scale <= 0) return;
+    const dy = pointer.start - event.clientY;
+    if (Math.abs(dy) >= 8 || Math.abs(pointer.x - event.clientX) >= 8) {
+      pointer.moved = true;
+      clearTimeout(tapTimer);
+      tapTimer = undefined;
     }
+    if (display && (!state?.viewport.w || (!pointer.dragging && Math.abs(dy) < 8))) return;
+    pointer.dragging = true;
+    dragTo(pointer.offset + dy / scale * (display && state.mirrorY ? -1 : 1), true);
   };
-  monitor.onlostpointercapture = () => {
-    if (!pointer) return;
+  function finishPointer(event, tap) {
+    if (pointer?.id !== event.pointerId) return;
+    const last = pointer;
     pointer = null;
-    dragTo(offset);
-  };
+    if (last.dragging || !display) dragTo(offset);
+    else if (tap && !last.moved && performance.now() - last.downAt < 350) viewerTap();
+  }
+  monitor.onpointerup = event => finishPointer(event, true);
+  monitor.onpointercancel = monitor.onlostpointercapture = event => finishPointer(event, false);
   $('remoteEditor').ontoggle = () => {
     if (!$('remoteEditor').open || !editable) return;
     $('remoteDraft').value = editable.text;
@@ -356,6 +386,13 @@ function runReceiver(auth, display = false, ready, expired) {
         monitor.hidden = !state.open;
         showCountdown($('remoteCountdown'), state.countdown);
         showReadingTimer($('remoteReadingTimer'), state.timer, display && state.mirrorX, display && state.mirrorY);
+        if (display) {
+          $('viewerFont').textContent = state.font;
+          $('viewerSpeed').textContent = state.speed + ' px/s';
+          $('viewerMirrorX').checked = state.mirrorX;
+          $('viewerMirrorY').checked = state.mirrorY;
+          $('viewerTimer').checked = state.timer != null;
+        }
         layout();
         if (!pointer && (state.seekId === pending?.id || performance.now() > pending?.until)) pending = undefined;
         if (!pending) {
@@ -383,6 +420,9 @@ function runReceiver(auth, display = false, ready, expired) {
     for (const b of $('remoteControls').children) b.disabled = !connected || !state?.open;
   }, error => {
     if (display) {
+      clearInterval(controlInterval);
+      clearTimeout(tapTimer);
+      if (viewerSettings.open) viewerSettings.close();
       observer.disconnect();
       removeEventListener('resize', sendSize);
     }
@@ -409,9 +449,15 @@ function runReceiver(auth, display = false, ready, expired) {
     keepDisplayAwake();
     document.addEventListener('visibilitychange', keepDisplayAwake);
     addEventListener('resize', sendSize);
-    return;
+    $('viewerOptions').onclick = openViewerSettings;
+    for (const button of viewerSettings.querySelectorAll('[data-gobbo-command]')) {
+      button.onclick = () => { if (connected && commands.length < 8) commands.push(button.dataset.gobboCommand); };
+    }
+    for (const [key, id] of Object.entries({mirrorX:'viewerMirrorX', mirrorY:'viewerMirrorY', timer:'viewerTimer'})) {
+      $(id).onchange = () => { if (connected) send({type:'control', settings:{[key]:$(id).checked}}); };
+    }
   }
-  setInterval(() => {
+  controlInterval = setInterval(() => {
     if (!connected) return;
     const outgoing = seek || (pointer && pending?.held ? pending : undefined);
     if (!outgoing && !edit && !commands.length) return;
@@ -857,7 +903,7 @@ function setup() {
       const state = {
         revision:content.revision, view:view(), width:stage.clientWidth, height:stage.clientHeight,
         viewport:rect(viewport), slide:content.image ? rect(slide) : null,
-        font, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!$('screen').hidden,
+        font, speed, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!$('screen').hidden,
         mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked,
         timer:timerToggle.checked ? elapsedSeconds() : null,
         playing:playing && !localDrag && performance.now() >= remoteHoldUntil, seekId:appliedSeekId
@@ -901,7 +947,16 @@ function setup() {
       }
       send?.({type:'edit-result', ok:Boolean(valid)});
     }
-    if (Object.hasOwn(buttons, message.command)) act(message.command,true);
+    const settings = message.settings;
+    if (settings && typeof settings === 'object') {
+      if (typeof settings.mirrorX === 'boolean') $('mirrorX').checked = settings.mirrorX;
+      if (typeof settings.mirrorY === 'boolean') $('mirrorY').checked = settings.mirrorY;
+      if (typeof settings.timer === 'boolean') timerToggle.checked = settings.timer;
+      fitPreview();
+    }
+    if (message.command === 'toggle' && !$('screen').hidden) {
+      act(playing || countdownUntil ? 'pause' : 'play', true);
+    } else if (Object.hasOwn(buttons, message.command)) act(message.command,true);
   }
   setInterval(publishState, 100);
   format();
