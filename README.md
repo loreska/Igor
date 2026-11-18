@@ -78,3 +78,7 @@ Il file PPTX viene elaborato dal browser del dispositivo. Il limite del PPTX da 
 ### Uso con un solo dispositivo
 
 Apri la pagina principale sul tablet, carica il materiale e scegli **Leggi su questo dispositivo**. Un tocco breve avvia o mette in pausa, il trascinamento scorre il copione e due tocchi rapidi aprono le opzioni. Da quelle opzioni puoi anche tornare al materiale.
+
+### Recupero locale
+
+Igor salva automaticamente il lavoro aperto nel browser e conserva fino a cinque lavori recenti. Usa **Riprendi ultima sessione** oppure apri un elemento da **Recenti**. Il gobbo riparte in pausa con posizione e impostazioni recuperate. I documenti salvati per il recupero restano nello stesso browser e indirizzo. Per un tablet usato come schermo potrebbe essere necessario generare un nuovo codice dopo aver ricaricato il dispositivo di controllo.
