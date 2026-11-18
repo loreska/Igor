@@ -1,0 +1,11 @@
+services:
+  gobbo:
+    networks:
+      caddy:
+        aliases:
+          - igor
+
+networks:
+  caddy:
+    external: true
+    name: ${CADDY_NETWORK:?Imposta CADDY_NETWORK sul nome della rete Docker di Caddy}

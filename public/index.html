@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Igor · It Goes On Reading</title><link rel="icon" type="image/png" href="igor.png"><link rel="apple-touch-icon" href="igor.png"><link rel="stylesheet" href="style.css"><script src="mammoth.js" defer></script><script src="zip.js" defer></script><script src="app.js" type="module"></script></head>
+<body>
+<main id="setup">
+<header class="igor-brand">
+<img src="igor.png" width="82" height="82" alt="">
+<div><h1>Igor</h1><p lang="en">It Goes On Reading</p></div>
+</header>
+<p>Carica il materiale e controlla il gobbo da questo dispositivo.</p>
+<p><a href="?schermo=1">Usa questo dispositivo come schermo del gobbo</a></p>
+<div class="row"><label>Copione (Word, PDF o testo) <input id="file" type="file" accept=".txt,.docx,.pdf"></label><label>Slide (PDF consigliato, oppure PPTX) <input id="slidesFile" type="file" accept=".pdf,.pptx"></label></div>
+<dialog id="pptxDownload" aria-labelledby="pptxTitle"><form method="dialog">
+<h2 id="pptxTitle">Attiva il convertitore PowerPoint</h2>
+<p>Al primo utilizzo il browser scarica circa <strong>248 MB</strong>. Se i dati sono ancora in cache, il browser li riutilizza. Il PowerPoint viene convertito su questo dispositivo.</p>
+<p>Su hotspot puoi annullare e caricare un PDF, oppure scaricare il convertitore quando sei su Wi-Fi.</p>
+<div class="row"><button value="cancel" autofocus>Annulla</button><button value="download">Scarica e converti</button></div>
+</form></dialog>
+<details><summary>Aggiungi note a una presentazione PDF</summary><label>Note del relatore (.pptx) <input id="notesFile" type="file" accept=".pptx"></label></details>
+<textarea id="draft" rows="5" placeholder="Incolla o scrivi il copione"></textarea>
+<div class="row"><button id="apply">Carica testo</button><label><input type="checkbox" id="styled" checked> Mantieni formattazione Word</label><label>Vista <select id="view"><option value="text">Gobbo</option><option value="slide">Slide</option><option value="both">Slide + note</option><option value="notes">Solo note</option></select></label></div>
+<div class="row"><label><input type="checkbox" id="mirrorX"> Specchia orizzontalmente</label><label><input type="checkbox" id="mirrorY"> Specchia verticalmente</label><button id="launch">Apri anteprima</button><button id="pair">Abbina schermo</button></div>
+<div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
+<p id="message" role="status"></p>
+<div id="localControls"></div>
+<footer class="igor-quote"><q>Quale gobba?</q></footer>
+</main>
+<main id="joinScreen" hidden>
+<h1>Schermo del gobbo</h1>
+<form id="joinForm">
+<label for="screenCode">Codice di 5 caratteri</label>
+<div class="row"><input id="screenCode" type="text" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocomplete="off" autocapitalize="characters" spellcheck="false" required><button type="submit">Collega</button></div>
+</form>
+<p id="joinStatus" role="status"></p>
+<a href="./">Torna ai comandi</a>
+</main>
+<main id="remote" hidden>
+<header class="igor-operator"><img src="igor.png" width="30" height="30" alt=""><strong>Igor</strong><span>Pannello operatore</span></header>
+<p id="connection" role="status">Connessione in corso…</p>
+<p id="waiting" hidden>Lo schermo del gobbo non è ancora aperto sul tablet.</p>
+<div id="viewerActions" hidden><button id="viewerFull">Schermo intero</button><a href="?schermo=1">Cambia collegamento</a></div>
+<div id="monitor" aria-label="Anteprima gobbo, trascina per scorrere">
+<div id="monitorStage"><img id="monitorSlide" alt="" hidden><div id="monitorViewport"><article class="script" id="monitorCopy"></article><div class="reading-line"></div></div></div>
+<div class="countdown" id="remoteCountdown" hidden></div>
+</div>
+<div id="remoteControls"></div>
+<details id="remoteEditor"><summary>Modifica testo</summary>
+<textarea id="remoteDraft" rows="7" aria-label="Testo del gobbo"></textarea>
+<button id="sendEdit">Invia correzione</button> <span id="editStatus" role="status"></span>
+</details></main>
+<section id="screen" hidden aria-label="Schermo gobbo">
+<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div></div>
+<div id="previewBar"><output id="previewStatus" role="status"></output><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><button id="exit">Materiale e impostazioni</button></div></div>
+</section>
+</body></html>
