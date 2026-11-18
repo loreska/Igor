@@ -41,6 +41,7 @@
 <div id="monitor" aria-label="Anteprima gobbo, trascina per scorrere">
 <div id="monitorStage"><img id="monitorSlide" alt="" hidden><div id="monitorViewport"><article class="script" id="monitorCopy"></article><div class="reading-line"></div></div></div>
 <div class="countdown" id="remoteCountdown" hidden></div>
+<div class="reading-timer" id="remoteReadingTimer" aria-label="Tempo trascorso" hidden></div>
 </div>
 <div id="remoteControls"></div>
 <details id="remoteEditor"><summary>Modifica testo</summary>
@@ -48,7 +49,7 @@
 <button id="sendEdit">Invia correzione</button> <span id="editStatus" role="status"></span>
 </details></main>
 <section id="screen" hidden aria-label="Schermo gobbo">
-<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div></div>
-<div id="previewBar"><output id="previewStatus" role="status"></output><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><button id="exit">Materiale e impostazioni</button></div></div>
+<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div><div class="reading-timer" id="readingTimer" aria-label="Tempo trascorso" hidden></div></div>
+<div id="previewBar"><output id="previewStatus" role="status"></output><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><label><input id="showReadingTimer" type="checkbox"> Mostra timer</label><button id="resetReadingTimer">Azzera timer</button><button id="exit">Materiale e impostazioni</button></div></div>
 </section>
 </body></html>
