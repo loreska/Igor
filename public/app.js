@@ -473,9 +473,33 @@ function runReceiver(auth, display = false, ready, expired) {
   }, 80);
 }
 
+function openLocalArchive() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('igor-local', 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('works', {keyPath:'id'});
+      request.result.createObjectStore('media');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => reject(new Error('Archivio locale bloccato'));
+  });
+}
+
+function archiveTransaction(db, stores, mode, run) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(stores, mode);
+    const result = run(tx);
+    tx.oncomplete = () => resolve(result?.result);
+    tx.onabort = tx.onerror = () => reject(tx.error);
+  });
+}
+
 function setup() {
   let source = {text:'', html:''};
   let pdf = null;
+  let pdfBlob = null;
+  let originalFile = null;
   let notes = [];
   let page = 1;
   let renderVersion = 0;
@@ -521,6 +545,7 @@ function setup() {
   let imports = 0;
   let displaySize;
   let soloMode = false;
+  let lastSoloMode = false;
   const soloButton = $('soloLaunch');
   const soloSettings = $('viewerSettings');
   const soloTaps = readingTap(
@@ -558,6 +583,7 @@ function setup() {
     return offset === max;
   };
   function measure() {
+    if (!viewport.clientHeight) return;
     const middle = viewport.clientHeight / 2;
     copy.style.paddingBlock = middle + 'px';
     max = Math.max(0, copy.offsetHeight - viewport.clientHeight);
@@ -716,11 +742,161 @@ function setup() {
     }
   }
   document.addEventListener('visibilitychange', keepAwake);
+  // Copioni e posizione restano nel browser. I file binari si scrivono solo al cambio di materiale.
+  let activeWork;
+  let mediaDirty = false;
+  let lastSnapshot;
+  let recentWorks = [];
+  let restoring = false;
+  let saving = false;
+  const recoveryStatus = $('localRecoveryStatus');
+  const archive = openLocalArchive().catch(() => {
+    recoveryStatus.textContent = 'Il browser non consente il recupero locale.';
+    return null;
+  });
+
+  function snapshot() {
+    const text = $('draft').value;
+    if (!text.trim() && !pdfBlob) return null;
+    return {
+      id:activeWork, name:originalFile?.name || text.trim().split(/\r?\n/, 1)[0].slice(0, 72) || 'Copione',
+      text, source, notes, view:view(), page, font, speed, offset:Math.round(offset), max,
+      mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked, styled:$('styled').checked,
+      showTimer:timerToggle.checked, elapsed:elapsedSeconds(), solo:lastSoloMode, revision:content.revision
+    };
+  }
+
+  function unchanged(next, previous) {
+    return previous && Object.keys(next).every(key => next[key] === previous[key]);
+  }
+
+  function renderLocalHistory() {
+    $('resumeLocal').hidden = $('localRecent').hidden = recentWorks.length === 0;
+    $('resumeLocal').onclick = () => restoreLocal(recentWorks[0]);
+    $('localRecentList').dataset.latest = recentWorks[0]?.id || '';
+    $('localRecentList').replaceChildren();
+    for (const work of recentWorks) {
+      const row = document.createElement('li');
+      const open = document.createElement('button');
+      open.textContent = work.name;
+      open.onclick = () => restoreLocal(work);
+      const remove = document.createElement('button');
+      remove.textContent = 'Elimina';
+      remove.setAttribute('aria-label', 'Elimina ' + work.name);
+      remove.onclick = async () => {
+        if (saving || restoring) return;
+        try {
+          const db = await archive;
+          await removeLocal(db, work.id);
+          recentWorks = recentWorks.filter(item => item.id !== work.id);
+          if (activeWork === work.id) {
+            activeWork = undefined;
+            lastSnapshot = snapshot();
+            mediaDirty = false;
+          }
+          renderLocalHistory();
+        } catch { recoveryStatus.textContent = 'Impossibile eliminare il lavoro.'; }
+      };
+      row.append(open, remove);
+      $('localRecentList').append(row);
+    }
+  }
+
+  function removeLocal(db, id) {
+    return archiveTransaction(db, ['works','media'], 'readwrite', tx => {
+      tx.objectStore('works').delete(id);
+      tx.objectStore('media').delete(id);
+    });
+  }
+
+  async function saveLocal() {
+    if (restoring || saving || imports) return;
+    const next = snapshot();
+    if (!next || unchanged(next, lastSnapshot)) return;
+    const identifier = activeWork || (globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2));
+    const writeMedia = !activeWork || mediaDirty;
+    const media = {pdfBlob, originalFile};
+    next.id = identifier;
+    saving = true;
+    try {
+      const db = await archive;
+      if (!db) return;
+      const record = {...next, updated:Date.now()};
+      const ranked = [record, ...recentWorks.filter(item => item.id !== identifier)];
+      await archiveTransaction(db, ['works','media'], 'readwrite', tx => {
+        tx.objectStore('works').put(record);
+        if (writeMedia) tx.objectStore('media').put(media, identifier);
+        for (const old of ranked.slice(5)) {
+          tx.objectStore('works').delete(old.id);
+          tx.objectStore('media').delete(old.id);
+        }
+      });
+      activeWork = identifier;
+      lastSnapshot = next;
+      mediaDirty = false;
+      recentWorks = ranked.slice(0, 5);
+      if (!$('setup').hidden && $('localRecentList').dataset.latest !== identifier) renderLocalHistory();
+      recoveryStatus.textContent = '';
+    } catch { recoveryStatus.textContent = 'Salvataggio locale non riuscito. Controlla lo spazio del browser.'; }
+    finally { saving = false; }
+  }
+
+  async function restoreLocal(work) {
+    if (!work || imports || restoring || saving) return;
+    restoring = true;
+    try {
+      const db = await archive;
+      const media = await archiveTransaction(db, ['media'], 'readonly', tx => tx.objectStore('media').get(work.id));
+      const recoveredPdf = media?.pdfBlob ? await openPdf(await media.pdfBlob.arrayBuffer()) : null;
+      pdf = recoveredPdf;
+      pdfBlob = media?.pdfBlob || null;
+      originalFile = media?.originalFile || null;
+      source = work.source;
+      notes = work.notes;
+      $('draft').value = work.text;
+      if (work.view === 'text' && work.text !== source.text) source = {text:work.text, html:''};
+      $('view').value = work.view;
+      page = Math.min(work.page, pdf?.numPages || notes.length || 1);
+      font = work.font;
+      speed = work.speed;
+      $('mirrorX').checked = work.mirrorX;
+      $('mirrorY').checked = work.mirrorY;
+      $('styled').checked = work.styled;
+      timerToggle.checked = work.showTimer;
+      setPlaying(false);
+      readingElapsed = work.elapsed * 1000;
+      await draw();
+      activeWork = work.id;
+      mediaDirty = false;
+      launch(work.solo);
+      scroll(work.max > 0 ? max * work.offset / work.max : work.offset);
+      lastSnapshot = undefined;
+    } catch { recoveryStatus.textContent = 'Impossibile riprendere questo lavoro locale.'; }
+    finally { restoring = false; }
+  }
+
+  async function loadLocalHistory() {
+    const db = await archive;
+    if (!db) return;
+    try {
+      recentWorks = (await archiveTransaction(db, ['works'], 'readonly', tx => tx.objectStore('works').getAll()))
+        .sort((a,b) => b.updated - a.updated).slice(0,5);
+      renderLocalHistory();
+    } catch { recoveryStatus.textContent = 'Impossibile leggere lo storico locale.'; }
+  }
+
+  function newLocalWork(file) {
+    activeWork = undefined;
+    originalFile = file;
+    mediaDirty = true;
+    lastSnapshot = undefined;
+  }
+
   function launch(solo) {
     if (view() === 'text' && $('draft').value !== source.text) loadDraft();
     if (['slide','both'].includes(view()) && !pdf) return say('Carica prima il PDF delle slide.');
     if (view() === 'notes' && !notes.length) return say('Carica prima il PowerPoint con le note.');
-    soloMode = solo;
+    soloMode = lastSoloMode = solo;
     $('screen').classList.toggle('solo-mode', solo);
     $('soloReturn').hidden = !solo;
     $('setup').hidden = true;
@@ -729,6 +905,7 @@ function setup() {
     else $('screenPlay').focus({preventScroll:true});
     keepAwake();
     fitPreview();
+    if (!restoring) saveLocal();
   }
   $('launch').onclick = () => launch(false);
   soloButton.onclick = () => launch(true);
@@ -741,6 +918,8 @@ function setup() {
     (soloMode ? soloButton : $('launch')).focus();
     soloMode = false;
     soloTaps.cancel();
+    renderLocalHistory();
+    saveLocal();
     wake?.release().catch(() => {});
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   };
@@ -765,6 +944,8 @@ function setup() {
   }
   async function importDocument(file, isDeck = false) {
     if (!file) return;
+    if (restoring) return;
+    await saveLocal();
     const ext = file.name.split('.').pop().toLowerCase();
     say('Importazione in corso…');
     imports++;
@@ -779,6 +960,8 @@ function setup() {
         $('view').value = 'text';
       } else if (ext === 'pdf') {
         pdf = await openPdf(await file.arrayBuffer());
+        pdfBlob = file;
+        notes = [];
         page = 1;
         const paragraphs = [];
         for (let i = 1; !isDeck && i <= pdf.numPages; i++) {
@@ -798,9 +981,13 @@ function setup() {
         $('view').value = 'text';
       }
       await draw();
+      newLocalWork(file);
       say(!isDeck && ext === 'pdf' && !source.text ? 'PDF caricato come slide. Nessun testo selezionabile trovato.' : 'File caricato. Puoi aprire lo schermo.');
     } catch { say('Importazione non riuscita. Verifica il formato del file.'); }
-    finally { $('launch').disabled = soloButton.disabled = --imports > 0; }
+    finally {
+      $('launch').disabled = soloButton.disabled = --imports > 0;
+      saveLocal();
+    }
   }
 
   async function readPowerPointNotes(file) {
@@ -851,7 +1038,10 @@ function setup() {
     }
     say('Conversione del PowerPoint sul dispositivo…');
     const result = await converter.convert(new Uint8Array(await file.arrayBuffer()), {outputFormat:'pdf'}, file.name);
-    return openPdf(result.data);
+    const blob = new Blob([result.data], {type:'application/pdf'});
+    const converted = await openPdf(result.data);
+    pdfBlob = blob;
+    return converted;
   }
   function confirmConverterDownload() {
     const dialog = $('pptxDownload');
@@ -863,7 +1053,8 @@ function setup() {
   }
   async function importPowerPoint(input) {
     const file = input.files[0];
-    if (!file) return;
+    if (!file || restoring) return;
+    await saveLocal();
     const fileInputs = ['file','slidesFile'].map($);
     imports++;
     $('launch').disabled = soloButton.disabled = true;
@@ -890,6 +1081,7 @@ function setup() {
       page = 1;
       $('view').value = 'slide';
       await draw();
+      newLocalWork(file);
       if (!matching) say('Il numero di pagine PDF e di slide PowerPoint è diverso. Verifica la corrispondenza prima di usare le note.');
       else say(imported.some(Boolean) ? 'Slide caricate. Seleziona Slide + note per mostrare anche le note del relatore.' : 'Slide caricate. Puoi aprire lo schermo.');
     } catch (error) {
@@ -899,6 +1091,7 @@ function setup() {
       input.value = '';
       fileInputs.forEach(element => { element.disabled = false; });
       $('launch').disabled = soloButton.disabled = --imports > 0;
+      saveLocal();
     }
   }
   $('file').onchange = event => importDocument(event.currentTarget.files[0]);
@@ -1013,6 +1206,10 @@ function setup() {
     } else if (Object.hasOwn(buttons, message.command)) act(message.command,true);
   }
   setInterval(publishState, 100);
+  loadLocalHistory();
+  setInterval(saveLocal, 1000);
+  addEventListener('pagehide', saveLocal);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) saveLocal(); });
   format();
 }
 
