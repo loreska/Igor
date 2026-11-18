@@ -105,3 +105,11 @@ input[type=checkbox]{accent-color:var(--studio-gold)}
 .gobbo-header h1{font-size:clamp(17px,3vw,25px);margin:0}
 #previewBar{border-top:1px solid var(--studio-line);max-height:45dvh}
 @media(max-width:760px){.studio-workspace{grid-template-columns:minmax(0,1fr)}}
+
+#viewerSettings{width:min(420px,calc(100% - 24px));padding:18px;color:var(--studio-cream);background:var(--studio-panel);border:1px solid var(--studio-line);border-radius:14px}
+#viewerSettings::backdrop{background:#0009}
+.viewer-settings{display:grid;gap:14px}
+.viewer-settings h2{margin:0;font-size:1.15rem}
+.viewer-setting{display:grid;grid-template-columns:1fr 44px minmax(64px,auto) 44px;gap:6px;align-items:center}
+.viewer-setting button{padding:6px;min-height:44px}
+.viewer-setting output{text-align:center;font-variant-numeric:tabular-nums}
