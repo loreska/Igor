@@ -653,7 +653,11 @@ function setup() {
     refresh();
     say('Testo caricato.');
   }
-  $('apply').onclick = loadDraft;
+  $('draft').addEventListener('input', () => {
+    if (view() === 'text') return;
+    $('view').value = 'text';
+    $('view').onchange();
+  });
   async function openPdf(bytes) {
     const lib = await import('./pdf.mjs');
     lib.GlobalWorkerOptions.workerSrc = new URL('./pdf.worker.min.mjs', location.href).href;
