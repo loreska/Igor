@@ -209,6 +209,81 @@ function copyMarkup(target, html) {
   target.replaceChildren();
   append(target, doc.body.childNodes);
 }
+const momanService = '00001000-e619-419b-bc43-821e711009b7';
+const momanReport = '00001002-e619-419b-bc43-821e711009b7';
+const momanButtonCommands = [[0x01,'slower'], [0x02,'smaller'], [0x04,'larger'], [0x08,'faster'], [0x20,'home'], [0x40,'toggle']];
+
+function decodeMomanReport(value) {
+  if (value.byteLength < 7 || value.getUint8(0) !== 0xa1 || value.getUint8(1) !== 0x06) return null;
+  function axis(byte) {
+    const centered = byte - 128;
+    const span = centered < 0 ? 128 : 127;
+    return Math.sign(centered) * Math.max(0, Math.abs(centered) - 20) / (span - 20);
+  }
+  return {x:axis(value.getUint8(2)), y:axis(value.getUint8(3)), buttons:value.getUint8(6)};
+}
+
+function attachMoman(connectButtons, statuses, onInput) {
+  if (!isSecureContext || !navigator.bluetooth) return;
+  let device;
+  let characteristic;
+  let lastMask;
+  let lastDirection = 0;
+  let busy = false;
+  function update(label, message) {
+    for (const button of connectButtons) {
+      button.hidden = false;
+      button.textContent = label;
+      button.disabled = busy;
+    }
+    for (const status of statuses) status.textContent = message;
+  }
+  function notification(event) {
+    const report = decodeMomanReport(event.target.value);
+    if (!report) return;
+    const pressed = lastMask === undefined ? 0 : report.buttons & ~lastMask;
+    const commands = momanButtonCommands.filter(([bit]) => pressed & bit).map(([,command]) => command);
+    const direction = Math.abs(report.y) < .25 && Math.abs(report.x) >= .55 ? Math.sign(report.x) : 0;
+    if (direction && direction !== lastDirection) commands.push(direction < 0 ? 'prev' : 'next');
+    lastMask = report.buttons;
+    lastDirection = direction;
+    onInput(report.y, commands);
+  }
+  function disconnected() {
+    characteristic?.removeEventListener('characteristicvaluechanged', notification);
+    characteristic = undefined;
+    lastMask = undefined;
+    lastDirection = 0;
+    onInput(0, []);
+    update('Collega Moman', 'Telecomando disconnesso.');
+  }
+  for (const button of connectButtons) button.onclick = async () => {
+    if (busy) return;
+    if (device?.gatt.connected) { device.gatt.disconnect(); return; }
+    busy = true;
+    update('Collega Moman', 'Collegamento Bluetooth in corso…');
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters:[{namePrefix:'MOMAN'}], optionalServices:[momanService]
+      });
+      device.addEventListener('gattserverdisconnected', disconnected, {once:true});
+      const gatt = await device.gatt.connect();
+      const service = await gatt.getPrimaryService(momanService);
+      characteristic = await service.getCharacteristic(momanReport);
+      characteristic.addEventListener('characteristicvaluechanged', notification);
+      await characteristic.startNotifications();
+      busy = false;
+      update('Scollega Moman', 'Moman collegato.');
+    } catch (error) {
+      if (device?.gatt.connected) device.gatt.disconnect();
+      busy = false;
+      update('Collega Moman', error.name === 'NotFoundError' ? 'Nessun telecomando selezionato.' :
+        'Collegamento non riuscito. Scollega il Moman dalle altre app e riprova.');
+    }
+  };
+  update('Collega Moman', '');
+}
+
 const readingKeys = {
   ' ':'toggle', Enter:'toggle', ArrowUp:'back', ArrowDown:'forward', ArrowRight:'next',
   ArrowLeft:'prev', PageUp:'prev', PageDown:'next', '+':'faster', '-':'slower', Home:'home',
@@ -276,6 +351,9 @@ function runReceiver(auth, display = false, ready, expired) {
   let pending;
   let pointer;
   let controlInterval;
+  let momanRate = 0;
+  let momanSeen = 0;
+  let sentMomanRate = 0;
   const viewerSettings = $('viewerSettings');
   let edit;
   let editRevision;
@@ -478,6 +556,11 @@ function runReceiver(auth, display = false, ready, expired) {
     keepDisplayAwake();
     document.addEventListener('visibilitychange', keepDisplayAwake);
     addEventListener('resize', sendSize);
+    attachMoman([$('momanView')], [$('momanViewStatus')], (axis, incoming) => {
+      momanRate = axis;
+      momanSeen = performance.now();
+      if (connected && state?.open && !viewerSettings.open) commands.push(...incoming.slice(0, Math.max(0, 8 - commands.length)));
+    });
     document.addEventListener('keydown', onViewerKey);
     for (const button of viewerSettings.querySelectorAll('[data-gobbo-command]')) {
       button.onclick = () => { if (connected && commands.length < 8) commands.push(button.dataset.gobboCommand); };
@@ -489,8 +572,11 @@ function runReceiver(auth, display = false, ready, expired) {
   controlInterval = setInterval(() => {
     if (!connected) return;
     const outgoing = seek || (pointer && pending?.held ? pending : undefined);
-    if (!outgoing && !edit && !commands.length) return;
-    if (send({type:'control', command:commands[0], seek:outgoing, edit})) {
+    const rate = state?.open && !viewerSettings.open && performance.now() - momanSeen < 300 ? momanRate : 0;
+    const jog = (rate || rate !== sentMomanRate) ? rate : undefined;
+    if (!outgoing && !edit && !commands.length && jog === undefined) return;
+    if (send({type:'control', command:commands[0], seek:outgoing, edit, jog})) {
+      sentMomanRate = rate;
       seek = edit = undefined;
       commands.shift();
     }
@@ -565,6 +651,8 @@ function setup() {
   let max = 0;
   let countdownUntil = 0;
   let remoteHoldUntil = 0;
+  let momanRate = 0;
+  let momanUntil = 0;
   let localDrag;
   let imports = 0;
   let displaySize;
@@ -742,6 +830,15 @@ function setup() {
   };
   $('screenPlay').onclick = () => act(playing || countdownUntil ? 'pause' : 'play');
   previewArea.addEventListener('wheel', e => {e.preventDefault(); scroll(e.deltaY / previewScale);}, {passive:false});
+  attachMoman([$('momanSetup'), $('momanView')], [$('momanSetupStatus'), $('momanViewStatus')], (axis, incoming) => {
+    momanRate = axis;
+    momanUntil = performance.now() + 300;
+    if ($('screen').hidden || soloSettings.open) return;
+    for (const command of incoming) act(command === 'toggle' ? (playing || countdownUntil ? 'pause' : 'play') : command);
+  });
+  function activeJog(time) {
+    return time < momanUntil && !soloSettings.open ? momanRate : 0;
+  }
   function frame(time) {
     if (remotelyStarted && offlineSince && time - offlineSince > 4000) act('pause');
     if (countdownUntil && time >= countdownUntil) {
@@ -753,8 +850,12 @@ function setup() {
     showCountdown($('countdown'), countdownUntil ? Math.ceil((countdownUntil - time) / 1000) : 0);
     const playLabel = playing || countdownUntil ? 'Pausa' : 'Avvia';
     if ($('screenPlay').textContent !== playLabel) $('screenPlay').textContent = playLabel;
-    if (playing && view() !== 'slide' && !localDrag && time >= remoteHoldUntil && !$('screen').hidden &&
-        scroll(Math.min(80, time - lastFrame) * speed / 1000)) setPlaying(false, time);
+    if (view() !== 'slide' && !localDrag && time >= remoteHoldUntil && !$('screen').hidden) {
+      const step = Math.min(80, time - lastFrame) / 1000;
+      const jog = activeJog(time);
+      if (jog) scroll(jog * 360 * step);
+      else if (playing && scroll(step * speed)) setPlaying(false, time);
+    }
     lastFrame = time;
     requestAnimationFrame(frame);
   }
@@ -1188,6 +1289,10 @@ function setup() {
   }
   function applyControl(message) {
     if (soloMode || message.type !== 'control') return;
+    if (Number.isFinite(message.jog) && Math.abs(message.jog) <= 1) {
+      momanRate = message.jog;
+      momanUntil = performance.now() + 300;
+    }
     const size = message.displaySize;
     if (size && [size.width, size.height].every(value => Number.isFinite(value) && value >= 160 && value <= 4096)) {
       displaySize = size;
