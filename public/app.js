@@ -211,7 +211,14 @@ function copyMarkup(target, html) {
 }
 const momanService = '00001000-e619-419b-bc43-821e711009b7';
 const momanReport = '00001002-e619-419b-bc43-821e711009b7';
-const momanButtonCommands = [[0x01,'slower'], [0x02,'smaller'], [0x04,'larger'], [0x08,'faster'], [0x20,'home'], [0x40,'toggle']];
+const momanButtonCommands = [[0x01,'momanA'], [0x02,'smaller'], [0x04,'larger'], [0x08,'momanY'], [0x20,'home'], [0x40,'toggle']];
+
+function resolveMomanCommand(command, view) {
+  const slides = view === 'slide' || view === 'both' || view === 'notes';
+  if (command === 'momanY') return slides ? 'next' : 'faster';
+  if (command === 'momanA') return slides ? 'prev' : 'slower';
+  return command;
+}
 
 function decodeMomanReport(value) {
   if (value.byteLength < 7 || value.getUint8(0) !== 0xa1 || value.getUint8(1) !== 0x06) return null;
@@ -774,6 +781,7 @@ function setup() {
   }
   const refresh = (keepSlideTimer = false) => draw(keepSlideTimer === true).catch(() => say('Impossibile visualizzare questa pagina.'));
   function act(key, remote = false) {
+    key = resolveMomanCommand(key, view());
     if (key === 'play' && (view() !== 'slide' || timerToggle.checked) && !$('screen').hidden && !playing && !countdownUntil) {
       countdownUntil = performance.now() + 3000;
       remotelyStarted = remote;
@@ -1332,7 +1340,10 @@ function setup() {
     }
     if (message.command === 'toggle' && !$('screen').hidden) {
       act(playing || countdownUntil ? 'pause' : 'play', true);
-    } else if (Object.hasOwn(buttons, message.command)) act(message.command,true);
+    } else {
+      const command = resolveMomanCommand(message.command, view());
+      if (Object.hasOwn(buttons, command)) act(command, true);
+    }
   }
   setInterval(publishState, 100);
   loadLocalHistory();
