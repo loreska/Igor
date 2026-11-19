@@ -82,3 +82,7 @@ Apri la pagina principale sul tablet, carica il materiale e scegli **Leggi su qu
 ### Recupero locale
 
 Igor salva automaticamente il lavoro aperto nel browser e conserva fino a cinque lavori recenti. Usa **Riprendi ultima sessione** oppure apri un elemento da **Recenti**. Il gobbo riparte in pausa con posizione e impostazioni recuperate. I documenti salvati per il recupero restano nello stesso browser e indirizzo. Per un tablet usato come schermo potrebbe essere necessario generare un nuovo codice dopo aver ricaricato il dispositivo di controllo.
+
+### Moman Bluetooth LE (sperimentale)
+
+In un browser con Web Bluetooth, premi **Collega Moman** dalla preparazione o dalle opzioni del gobbo e scegli il telecomando. Lo stick verticale scorre il copione in modo proporzionale, quello orizzontale cambia slide nelle viste di presentazione. **OK** avvia o mette in pausa, **Y/A** accelerano o rallentano, **X/B** ingrandiscono o rimpiccioliscono il testo e **ON/OFF** torna all’inizio del copione. Select resta libero. Chiudi altre app connesse al Moman prima della prova. Il profilo è basato sui report del modello MOMAN-2A32.
