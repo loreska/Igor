@@ -209,6 +209,21 @@ function copyMarkup(target, html) {
   target.replaceChildren();
   append(target, doc.body.childNodes);
 }
+const readingKeys = {
+  ' ':'toggle', Enter:'toggle', ArrowUp:'back', ArrowDown:'forward', ArrowRight:'next',
+  ArrowLeft:'prev', PageUp:'prev', PageDown:'next', '+':'faster', '-':'slower', Home:'home',
+  MediaPlayPause:'toggle', MediaPlay:'play', MediaPause:'pause',
+  MediaTrackNext:'next', MediaTrackPrevious:'prev'
+};
+
+function readingCommand(event) {
+  if (event.ctrlKey || event.altKey || event.metaKey ||
+      event.target.closest?.('input, textarea, select, button, a, [contenteditable]')) return;
+  const command = Object.hasOwn(readingKeys, event.key) && readingKeys[event.key];
+  if (command === 'toggle' && event.repeat) return;
+  return command || undefined;
+}
+
 const linkParams = new URLSearchParams(location.hash.slice(1));
 const remoteId = linkParams.get('operator');
 if (new URLSearchParams(location.search).has('schermo')) {
@@ -432,12 +447,20 @@ function runReceiver(auth, display = false, ready, expired) {
       clearInterval(controlInterval);
       taps.cancel();
       if (viewerSettings.open) viewerSettings.close();
+      document.removeEventListener('keydown', onViewerKey);
       observer.disconnect();
       removeEventListener('resize', sendSize);
     }
     if (expired) expired(error);
     else $('connection').textContent = 'Sessione scaduta. Abbina di nuovo il telefono.';
   }, ready);
+  function onViewerKey(event) {
+    if (!connected || !state?.open || viewerSettings.open) return;
+    const command = readingCommand(event);
+    if (!command) return;
+    event.preventDefault();
+    if (commands.length < 8) commands.push(command);
+  }
   function sendSize() {
     send({type:'control', displaySize:{width:innerWidth, height:innerHeight}});
   }
@@ -455,6 +478,7 @@ function runReceiver(auth, display = false, ready, expired) {
     keepDisplayAwake();
     document.addEventListener('visibilitychange', keepDisplayAwake);
     addEventListener('resize', sendSize);
+    document.addEventListener('keydown', onViewerKey);
     for (const button of viewerSettings.querySelectorAll('[data-gobbo-command]')) {
       button.onclick = () => { if (connected && commands.length < 8) commands.push(button.dataset.gobboCommand); };
     }
@@ -681,13 +705,13 @@ function setup() {
   }
   controls($('localControls'), key => act(key));
   controls($('previewControls'), key => act(key), ['back','forward','slower','faster','smaller','larger','prev','next','home']);
-  const keys = {' ':'toggle', ArrowUp:'back', ArrowDown:'forward', ArrowRight:'next',
-    ArrowLeft:'prev', PageUp:'prev', PageDown:'next', '+':'faster', '-':'slower', Home:'home'};
+
   document.addEventListener('keydown', event => {
-    if ($('screen').hidden || !Object.hasOwn(keys,event.key) ||
-        event.target.closest?.('input, textarea, select, button, a, [contenteditable]')) return;
+    if ($('screen').hidden || soloSettings.open) return;
+    const command = readingCommand(event);
+    if (!command) return;
     event.preventDefault();
-    act(event.key === ' ' ? (playing || countdownUntil ? 'pause' : 'play') : keys[event.key]);
+    act(command === 'toggle' ? (playing || countdownUntil ? 'pause' : 'play') : command);
   });
   previewArea.onpointerdown = event => {
     if (!event.isPrimary || event.button !== 0 || localDrag || (!soloMode && !viewport.contains(event.target))) return;
