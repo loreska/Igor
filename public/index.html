@@ -25,6 +25,7 @@
 </section>
 <section class="studio-card studio-session" aria-labelledby="sessionTitle">
 <h2 id="sessionTitle">Sessione gobbo</h2>
+<button id="momanSetup" type="button" hidden>Collega Moman</button><p id="momanSetupStatus" role="status"></p>
 <div class="studio-actions"><button id="pair" type="button">Abbina schermo</button><button id="launch" class="studio-primary">Avvia il gobbo</button><button id="soloLaunch">Leggi su questo dispositivo</button></div>
 <div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
 </section>
@@ -74,6 +75,7 @@
 <dialog id="viewerSettings" aria-labelledby="viewerSettingsTitle">
 <form method="dialog" class="viewer-settings">
 <h2 id="viewerSettingsTitle">Opzioni gobbo</h2>
+<button id="momanView" type="button" hidden>Collega Moman</button><output id="momanViewStatus" role="status"></output>
 <div class="viewer-setting"><span>Dimensione testo</span><button type="button" data-gobbo-command="smaller" aria-label="Riduci dimensione testo">−</button><output id="viewerFont"></output><button type="button" data-gobbo-command="larger" aria-label="Aumenta dimensione testo">+</button></div>
 <div class="viewer-setting"><span>Velocità</span><button type="button" data-gobbo-command="slower" aria-label="Rallenta">−</button><output id="viewerSpeed"></output><button type="button" data-gobbo-command="faster" aria-label="Accelera">+</button></div>
 <fieldset class="studio-mirror"><legend>Specchiatura</legend><label><input type="checkbox" id="viewerMirrorX"> Orizzontale</label><label><input type="checkbox" id="viewerMirrorY"> Verticale</label></fieldset>
