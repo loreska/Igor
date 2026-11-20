@@ -282,7 +282,7 @@
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
       const node = walker.currentNode;
-      if (node.parentElement.closest('script,style,textarea,[lang]')) continue;
+      if (node.parentElement.closest('script,style,textarea,body [lang]')) continue;
       const value = node.data.trim();
       const translated = t(value);
       if (translated !== value) node.data = node.data.replace(value, () => translated);
