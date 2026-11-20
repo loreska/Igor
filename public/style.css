@@ -106,6 +106,8 @@ dialog p{color:var(--muted);margin:0 0 10px}
 }
 #setup .igor-brand img{width:56px;height:56px}
 .studio-links{margin-left:auto;display:flex;flex-wrap:wrap;gap:8px}
+.studio-language{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}
+.studio-language select{width:auto}
 .studio-support-link{display:inline-flex;align-items:center;justify-content:center;min-height:var(--tap);padding:6px 12px;border-radius:var(--radius-sm);background:var(--gold);color:var(--gold-ink);text-decoration:none;font-weight:700;text-align:center}
 .studio-support-link:hover{background:var(--gold-strong)}
 .studio-screen-link{

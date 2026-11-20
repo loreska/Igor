@@ -1,5 +1,9 @@
 # Igor · It Goes On Reading
 
+[English README](README.en.md)
+
+La lingua dell’interfaccia segue le preferenze del browser. **Lingua** permette di scegliere **Italiano**, **English** o **Automatica**. Il cambio ricarica la pagina. La scelta si salva su ciascun dispositivo. Per condividere una lingua specifica usa `?lang=it` o `?lang=en`.
+
 ## Telecomandi configurabili
 
 ### Easter egg

@@ -14,6 +14,7 @@ const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const files = {
   '': ['public/index.html', 'text/html'],
   'app.js': ['public/app.js', 'text/javascript'],
+  'i18n.js': ['public/i18n.js', 'text/javascript'],
   'style.css': ['public/style.css', 'text/css'],
   'reading-font/LiberationSans-Regular.ttf': ['node_modules/pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf', 'font/ttf'],
   'reading-font/LiberationSans-Bold.ttf': ['node_modules/pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf', 'font/ttf'],

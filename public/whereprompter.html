@@ -15,22 +15,23 @@
 <p class="guide">Tocca per saltare, tieni premuto per salire di più. Su PC usa Spazio. Al quinto errore la diretta si ferma.</p>
 <details class="guide"><summary>Testo sullo sfondo</summary><textarea id="backgroundScript" rows="3" placeholder="Incolla qui un copione per la prova offline" aria-label="Copione sullo sfondo" style="width:100%;margin-top:6px"></textarea></details>
 </main>
-<script>
+<script src="i18n.js"></script><script>
+const {t} = window.igorI18n;
 const $ = id => document.getElementById(id);
 const canvas = $('screen');
 const ctx = canvas.getContext('2d');
 const floor = 220, beatDistance = 62, beatLength = .48;
 const levels = [
-  {sentence:'Igor vi dà il benvenuto in regia', end:72, speed:1, interval:7, height:29},
-  {sentence:'Mi hanno detto fai il gobbo... ma io non ho una gobba!', end:84, speed:1.1, interval:5, height:37},
-  {sentence:'Il teleprompter è più potente della spada, e decisamente più comodo per farci i video', end:96, speed:1.2, interval:4, height:43}
+  {sentence:t('Igor vi dà il benvenuto in regia'), end:72, speed:1, interval:7, height:29},
+  {sentence:t('Mi hanno detto fai il gobbo... ma io non ho una gobba!'), end:84, speed:1.1, interval:5, height:37},
+  {sentence:t('Il teleprompter è più potente della spada, e decisamente più comodo per farci i video'), end:96, speed:1.2, interval:4, height:43}
 ];
-const errors = ['TYPO!','POP-UP','GLITCH','404','CURSORE','A CAPO?'];
+const errors = ['TYPO!','POP-UP','GLITCH','404','CURSORE',t('A CAPO?')];
 const boosts = {
-  auto:['Autocorrezione','AA','#c4ff87'],
+  auto:[t('Autocorrezione'),'AA','#c4ff87'],
   slow:['Scroll Boost','½','#a9baff'],
-  bolt:['Fulmine di Igor','ϟ','#6bd4ff'],
-  live:['Modalità Diretta','×2','#ff8999']
+  bolt:[t('Fulmine di Igor'),'ϟ','#6bd4ff'],
+  live:[t('Modalità Diretta'),'×2','#ff8999']
 };
 function buildLevel(index) {
   const level = levels[index];
@@ -53,7 +54,7 @@ function buildLevel(index) {
 }
 let levelIndex=0, level=buildLevel(0);
 let background=[];
-const fallback=['[REGIA] Preparazione alla diretta','TITOLO / Apertura','[REV] Controllare il ritorno video','PARAGRAFO 01 / Saluto iniziale','[EDIT] Ultima revisione','[MARKER] Riga di lettura','FINE COPIONE   ▮'];
+const fallback=[t('[REGIA] Preparazione alla diretta'),t('TITOLO / Apertura'),t('[REV] Controllare il ritorno video'),t('PARAGRAFO 01 / Saluto iniziale'),t('[EDIT] Ultima revisione'),t('[MARKER] Riga di lettura'),t('FINE COPIONE   ▮')];
 function useScript(value) {
   $('backgroundScript').value=value;
   background=(value.slice(0,12000).trim().match(/.{1,43}(?:\s|$)|.{1,43}/gu)||[]).map(line=>line.trim()).filter(Boolean);
@@ -137,7 +138,7 @@ function draw(now=0){
   rect(38,floor,width-38,2,'#e8bc74');
   rect(38,floor+2,width-38,24,'#252e38');
   const stride=150, offset=travel%stride;
-  for(let x=38-offset;x<width;x+=stride)text('▸ RIGA DI COPIONE',x,floor+16,'#b4a18a',10);
+  for(let x=38-offset;x<width;x+=stride)text(t('▸ RIGA DI COPIONE'),x,floor+16,'#b4a18a',10);
   rect(0,floor,38,26,'#3e3325');text('▶',14,floor+17,'#f4d094');
   const flash=1-(state?.beat||0)%1;
   rect(38,0,width-38,3,'#343d48');rect(38,0,(width-38)*Math.min(1,(state?.beat||0)/level.end),3,'#f4d094');
@@ -241,7 +242,7 @@ function advance(dt) {
       if(state.errors===5){refreshHud();finish();return;}
     }
   }
-  const phase=state.beat>=level.end-6?'Countdown finale':state.beat>=level.end*.65?'Ultime correzioni':state.beat>=4?'Scorrimento del copione':'Preparazione alla diretta';
+  const phase=state.beat>=level.end-6?t('Countdown finale'):state.beat>=level.end*.65?t('Ultime correzioni'):state.beat>=4?t('Scorrimento del copione'):t('Preparazione alla diretta');
   const status=state.power?phase+' · '+boosts[state.power][0]:phase;
   if($('phase').textContent!==status)$('phase').textContent=status;
   refreshHud();
@@ -252,12 +253,12 @@ function finish() {
   const won=state.words.size===level.tokens.length&&state.errors<5;
   const next=won&&levelIndex<levels.length-1;
   ending=next?null:won?'win':'rain';effectStart=performance.now();
-  $('live').textContent=next?'PRONTI':won?'LIVE':'FUORI ONDA';
-  $('phase').textContent=next?'Livello completato':won?'Ingresso in onda':state.errors===5?'Cinque errori in regia':'Copione incompleto';
-  $('title').textContent=next?'Copione pronto':won?'SI PUÒ FARE!':'Potrebbe esser peggio, potrebbe piovere';
+  $('live').textContent=next?'PRONTI':won?'LIVE':t('FUORI ONDA');
+  $('phase').textContent=next?t('Livello completato'):won?t('Ingresso in onda'):state.errors===5?t('Cinque errori in regia'):t('Copione incompleto');
+  $('title').textContent=next?t('Copione pronto'):won?t('SI PUÒ FARE!'):t('Potrebbe esser peggio, potrebbe piovere');
   const sentence=level.tokens.map((word,i)=>state.words.has(i)?word:'[…]');
   $('description').textContent=sentence.join(' ');
-  $('start').textContent=next?'Livello '+(levelIndex+2):'Rigioca';$('pause').disabled=true;
+  $('start').textContent=next?t('Livello ')+(levelIndex+2):t('Rigioca');$('pause').disabled=true;
   if(next) levelIndex++;
   else if(won) levelIndex=0;
   $('overlay').classList.add('result');$('overlay').hidden=false;
@@ -276,8 +277,8 @@ $('start').onclick=()=>{
   state={active:true,paused:false,time:0,beat:0,y:0,v:0,score:0,errors:0,invulnerable:0,hit:new Set(),words:new Set(),previous:performance.now()};
   resetWords();
   $('overlay').hidden=true;$('overlay').classList.remove('result');$('pause').disabled=false;
-  $('pause').textContent='Ⅱ Pausa';$('live').textContent='PRONTI';
-  $('phase').textContent='Preparazione alla diretta';
+  $('pause').textContent=t('Ⅱ Pausa');$('live').textContent='PRONTI';
+  $('phase').textContent=t('Preparazione alla diretta');
   refreshHud();note(440);frameId=requestAnimationFrame(frame);
 };
 function resetWords() {
@@ -290,13 +291,13 @@ function resetWords() {
 function pause() {
   if(!state?.active)return;
   state.paused=!state.paused;input=undefined;
-  $('pause').textContent=state.paused?'▶ Riprendi':'Ⅱ Pausa';
-  if(state.paused){cancelAnimationFrame(frameId);$('phase').textContent='In pausa';}
+  $('pause').textContent=state.paused?t('▶ Riprendi'):t('Ⅱ Pausa');
+  if(state.paused){cancelAnimationFrame(frameId);$('phase').textContent=t('In pausa');}
   else {state.previous=performance.now();frameId=requestAnimationFrame(frame);}
 }
 $('pause').onclick=pause;
 $('sound').onclick=()=>{
-  muted=!muted;$('sound').textContent=muted?'Audio spento':'Audio attivo';
+  muted=!muted;$('sound').textContent=muted?t('Audio spento'):t('Audio attivo');
   $('sound').setAttribute('aria-pressed',String(!muted));if(!muted)wakeAudio();
 };
 $('stage').onpointerdown=event=>{

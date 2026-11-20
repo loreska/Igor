@@ -1,8 +1,9 @@
+const {t, language} = window.igorI18n;
 const $ = id => document.getElementById(id);
 const buttons = {
-  play:'▶ Avvia', pause:'❚❚ Pausa', slower:'− Lento', faster:'+ Veloce',
-  back:'↑ Indietro', forward:'↓ Avanti', home:'⤒ Inizio',
-  prev:'‹ Slide', next:'Slide ›', smaller:'A−', larger:'A+'
+  play:t('▶ Avvia'), pause:'❚❚ Pausa', slower:t('− Lento'), faster:t('+ Veloce'),
+  back:t('↑ Indietro'), forward:t('↓ Avanti'), home:t('⤒ Inizio'),
+  prev:t('‹ Slide'), next:t('Slide ›'), smaller:'A−', larger:'A+'
 };
 // Tasti di tastiere, pedali, clicker e telecomandi Bluetooth che si presentano come tastiera.
 const keyCommands = {
@@ -13,8 +14,8 @@ const keyCommands = {
   '+':'faster', '=':'faster', '-':'slower', Home:'home'
 };
 const commandLabels = {
-  toggle:'Avvia / Pausa', back:'Scorri indietro', forward:'Scorri avanti', next:'Avanti (slide o scorri)',
-  smaller:'Riduci testo', larger:'Ingrandisci testo', prev:'Indietro (slide o scorri)', faster:'Più veloce', slower:'Più lento', home:'Torna all’inizio'
+  toggle:t('Avvia / Pausa'), back:t('Scorri indietro'), forward:t('Scorri avanti'), next:t('Avanti (slide o scorri)'),
+  smaller:t('Riduci testo'), larger:t('Ingrandisci testo'), prev:t('Indietro (slide o scorri)'), faster:t('Più veloce'), slower:t('Più lento'), home:'Torna all’inizio'
 };
 // I tasti del telecomando non devono scattare mentre si scrive, né attivare per sbaglio un pulsante a fuoco.
 function keyBlocked(event) {
@@ -24,18 +25,18 @@ function keyBlocked(event) {
   return [' ', 'Enter'].includes(event.key) && Boolean(target.closest?.('button, input[type=checkbox]'));
 }
 const buttonHints = {
-  play:'Avvia la lettura (Spazio)', pause:'Metti in pausa (Spazio)',
-  slower:'Rallenta lo scorrimento (−)', faster:'Accelera lo scorrimento (+)',
-  back:'Scorri indietro (↑)', forward:'Scorri avanti (↓)', home:'Torna all’inizio del copione',
-  prev:'Slide precedente (←)', next:'Slide successiva (→)',
-  smaller:'Riduci la dimensione del testo', larger:'Aumenta la dimensione del testo'
+  play:t('Avvia la lettura (Spazio)'), pause:t('Metti in pausa (Spazio)'),
+  slower:t('Rallenta lo scorrimento (−)'), faster:t('Accelera lo scorrimento (+)'),
+  back:t('Scorri indietro (↑)'), forward:t('Scorri avanti (↓)'), home:'Torna all’inizio del copione',
+  prev:t('Slide precedente (←)'), next:t('Slide successiva (→)'),
+  smaller:t('Riduci la dimensione del testo'), larger:t('Aumenta la dimensione del testo')
 };
 async function api(route, body = {}) {
   const response = await fetch('api/' + route, {
     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body),
     signal:AbortSignal.timeout(3000)
   });
-  if (!response.ok) throw new Error('Sessione non disponibile');
+  if (!response.ok) throw new Error(t('Sessione non disponibile'));
   return response.json();
 }
 function connectPair(join, receive, changed, expired, ready = () => {}) {
@@ -292,14 +293,14 @@ function attachMoman(connectButtons, statuses, onInput) {
     lastMask = undefined;
     lastDirection = 0;
     onInput(0, []);
-    update('Collega Moman', 'Telecomando disconnesso.');
+    update(t('Collega Moman'), t('Telecomando disconnesso.'));
   }
   for (const button of connectButtons) button.onclick = async () => {
     if (busy) return;
     if (device?.gatt.connected) { device.gatt.disconnect(); return; }
     device = undefined;
     busy = true;
-    update('Collega Moman', 'Collegamento Bluetooth in corso…');
+    update(t('Collega Moman'), t('Collegamento Bluetooth in corso…'));
     try {
       device = await navigator.bluetooth.requestDevice({
         acceptAllDevices:true, optionalServices:[momanService]
@@ -311,16 +312,16 @@ function attachMoman(connectButtons, statuses, onInput) {
       characteristic.addEventListener('characteristicvaluechanged', notification);
       await characteristic.startNotifications();
       busy = false;
-      update('Scollega Moman', 'Moman collegato.');
+      update(t('Scollega Moman'), t('Moman collegato.'));
     } catch (error) {
       if (device?.gatt.connected) device.gatt.disconnect();
       busy = false;
-      update('Collega Moman', error.name === 'NotFoundError' ?
-        (device ? 'Il dispositivo selezionato non espone il servizio BLE Moman.' : 'Nessun dispositivo selezionato.') :
-        'Collegamento non riuscito. Scollega il Moman dalle altre app e riprova.');
+      update(t('Collega Moman'), error.name === 'NotFoundError' ?
+        (device ? t('Il dispositivo selezionato non espone il servizio BLE Moman.') : t('Nessun dispositivo selezionato.')) :
+        t('Collegamento non riuscito. Scollega il Moman dalle altre app e riprova.'));
     }
   };
-  update('Collega Moman', '');
+  update(t('Collega Moman'), '');
 }
 
 function revealMomanOnClicks(surface, controls) {
@@ -358,7 +359,7 @@ $('igorIcon').addEventListener('click', () => {
   iconClicks = 0;
   const frame = document.createElement('iframe');
   frame.title = 'WHEREPROMTER? THEREPROMPTER!';
-  frame.src = 'whereprompter.html';
+  frame.src = 'whereprompter.html?lang=' + language;
   gameHost.append(frame);
   gameDialog.showModal();
 });
@@ -391,8 +392,8 @@ if (new URLSearchParams(location.search).has('schermo')) {
       try { sessionStorage.removeItem(cacheKey); } catch {}
       $('remote').hidden = true;
       $('joinScreen').hidden = false;
-      $('joinStatus').textContent = error === 4029 ? 'Troppi tentativi. Riprova tra poco.' :
-        'Codice non valido, scaduto o già utilizzato. Generane uno nuovo dai comandi.';
+      $('joinStatus').textContent = error === 4029 ? t('Troppi tentativi. Riprova tra poco.') :
+        t('Codice non valido, scaduto o già utilizzato. Generane uno nuovo dai comandi.');
     });
   }
   $('joinForm').onsubmit = event => {
@@ -522,16 +523,16 @@ function runReceiver(auth, display = false, ready, expired) {
     if (!$('remoteEditor').open || !editable) return;
     $('remoteDraft').value = editable.text;
     editRevision = revision;
-    $('editStatus').textContent = editable.markup ? 'Le modifiche dal telefono salvano il copione come testo semplice.' : '';
+    $('editStatus').textContent = editable.markup ? t('Le modifiche dal telefono salvano il copione come testo semplice.') : '';
   };
   $('sendEdit').onclick = () => {
     if (!connected || editRevision === undefined) return;
     if (editRevision !== revision) {
-      $('editStatus').textContent = 'Il testo è cambiato. Chiudi e riapri l’editor prima di inviare.';
+      $('editStatus').textContent = t('Il testo è cambiato. Chiudi e riapri l’editor prima di inviare.');
       return;
     }
     edit = {revision, text:$('remoteDraft').value};
-    $('editStatus').textContent = 'Invio in corso…';
+    $('editStatus').textContent = t('Invio in corso…');
   };
   monitor.addEventListener('wheel', event => {
     if (!connected || !state?.viewport.w || scale <= 0) return;
@@ -543,13 +544,13 @@ function runReceiver(auth, display = false, ready, expired) {
   });
   function receive(info) {
       if (info.type === 'edit-result') {
-        $('editStatus').textContent = info.ok ? 'Correzione applicata sul tablet.' : 'Correzione non accettata. Riapri l’editor e riprova.';
+        $('editStatus').textContent = info.ok ? t('Correzione applicata sul tablet.') : t('Correzione non accettata. Riapri l’editor e riprova.');
         return;
       }
       if (info.type !== 'state') return;
       connected = true;
-      $('connection').textContent = (info.status || 'Collegato al tablet') +
-        (mode === 'direct' ? ' · Diretto' : ' · Via server');
+      $('connection').textContent = (info.state?.statusData ? readingStatus(info.state.statusData) : info.status || t('Collegato al tablet')) +
+        (mode === 'direct' ? t(' · Diretto') : t(' · Via server'));
       if (info.content && info.content.revision !== revision) {
         revision = info.content.revision;
         editable = info.content.editable;
@@ -597,10 +598,10 @@ function runReceiver(auth, display = false, ready, expired) {
       seek = pending = undefined;
       pointer = null;
       $('waiting').hidden = true;
-      $('connection').textContent = 'Tablet non raggiungibile. Riconnessione…';
+      $('connection').textContent = t('Tablet non raggiungibile. Riconnessione…');
     }
     if (display) {
-      $('connection').textContent = next === 'offline' ? 'In attesa del dispositivo di controllo…' : 'Schermo collegato';
+      $('connection').textContent = next === 'offline' ? t('In attesa del dispositivo di controllo…') : t('Schermo collegato');
       if (next !== 'offline') sendSize();
     }
     for (const b of $('remoteControls').children) b.disabled = !connected || !state?.open;
@@ -613,7 +614,7 @@ function runReceiver(auth, display = false, ready, expired) {
       removeEventListener('resize', sendSize);
     }
     if (expired) expired(error);
-    else $('connection').textContent = 'Sessione scaduta. Abbina di nuovo il telefono.';
+    else $('connection').textContent = t('Sessione scaduta. Abbina di nuovo il telefono.');
   }, ready);
   function sendSize() {
     send({type:'control', displaySize:{width:innerWidth, height:innerHeight}});
@@ -621,9 +622,9 @@ function runReceiver(auth, display = false, ready, expired) {
   if (display) {
     monitor.hidden = true;
     $('waiting').hidden = true;
-    $('waiting').textContent = 'In attesa che il dispositivo di controllo apra l’anteprima.';
+    $('waiting').textContent = t('In attesa che il dispositivo di controllo apra l’anteprima.');
     $('remoteEditor').hidden = true;
-    $('connection').textContent = 'Collegamento in corso…';
+    $('connection').textContent = t('Collegamento in corso…');
     async function keepDisplayAwake() {
       if (!document.hidden && !$('remote').hidden) {
         try { await navigator.wakeLock?.request('screen'); } catch {}
@@ -669,7 +670,7 @@ function openLocalArchive() {
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-    request.onblocked = () => reject(new Error('Archivio locale bloccato'));
+    request.onblocked = () => reject(new Error(t('Archivio locale bloccato')));
   });
 }
 
@@ -852,7 +853,7 @@ function setup() {
     preview.getContext('2d').drawImage(canvas, 0, 0, preview.width, preview.height);
     content = {...content, revision:content.revision + 1, image:preview.toDataURL('image/jpeg', .82)};
   }
-  const refresh = (keepSlideTimer = false) => draw(keepSlideTimer === true).catch(() => say('Impossibile visualizzare questa pagina.'));
+  const refresh = (keepSlideTimer = false) => draw(keepSlideTimer === true).catch(() => say(t('Impossibile visualizzare questa pagina.')));
   function act(key, remote = false) {
     key = resolveMomanCommand(key, view());
     if (key === 'play' && (view() !== 'slide' || timerToggle.checked) && !$('screen').hidden && !playing && !countdownUntil) {
@@ -938,7 +939,7 @@ function setup() {
     showReadingTimer($('readingTimer'), timerToggle.checked ? elapsedSeconds(time) : null,
       (!session || soloMode) && $('mirrorX').checked, (!session || soloMode) && $('mirrorY').checked);
     showCountdown($('countdown'), countdownUntil ? Math.ceil((countdownUntil - time) / 1000) : 0);
-    const playLabel = playing || countdownUntil ? 'Pausa' : 'Avvia';
+    const playLabel = playing || countdownUntil ? t('Pausa') : t('Avvia');
     if ($('screenPlay').textContent !== playLabel) $('screenPlay').textContent = playLabel;
     if (view() !== 'slide' && !localDrag && time >= remoteHoldUntil && !$('screen').hidden) {
       const step = Math.min(80, time - lastFrame) / 1000;
@@ -968,7 +969,7 @@ function setup() {
   let saving = false;
   const recoveryStatus = $('localRecoveryStatus');
   const archive = openLocalArchive().catch(() => {
-    recoveryStatus.textContent = 'Il browser non consente il recupero locale.';
+    recoveryStatus.textContent = t('Il browser non consente il recupero locale.');
     return null;
   });
 
@@ -976,7 +977,7 @@ function setup() {
     const text = $('draft').value;
     if (!text.trim() && !pdfBlob) return null;
     return {
-      id:activeWork, name:originalFile?.name || text.trim().split(/\r?\n/, 1)[0].slice(0, 72) || 'Copione',
+      id:activeWork, name:originalFile?.name || text.trim().split(/\r?\n/, 1)[0].slice(0, 72) || t('Copione'),
       text, source, notes, view:view(), page, font, speed, offset:Math.round(offset), max,
       mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked, styled:$('styled').checked,
       showTimer:timerToggle.checked, elapsed:elapsedSeconds(), solo:lastSoloMode, revision:content.revision
@@ -998,8 +999,8 @@ function setup() {
       open.textContent = work.name;
       open.onclick = () => restoreLocal(work);
       const remove = document.createElement('button');
-      remove.textContent = 'Elimina';
-      remove.setAttribute('aria-label', 'Elimina ' + work.name);
+      remove.textContent = t('Elimina');
+      remove.setAttribute('aria-label', t('Elimina ') + work.name);
       remove.onclick = async () => {
         if (saving || restoring) return;
         try {
@@ -1012,7 +1013,7 @@ function setup() {
             mediaDirty = false;
           }
           renderLocalHistory();
-        } catch { recoveryStatus.textContent = 'Impossibile eliminare il lavoro.'; }
+        } catch { recoveryStatus.textContent = t('Impossibile eliminare il lavoro.'); }
       };
       row.append(open, remove);
       $('localRecentList').append(row);
@@ -1054,7 +1055,7 @@ function setup() {
       recentWorks = ranked.slice(0, 5);
       if (!$('setup').hidden && $('localRecentList').dataset.latest !== identifier) renderLocalHistory();
       recoveryStatus.textContent = '';
-    } catch { recoveryStatus.textContent = 'Salvataggio locale non riuscito. Controlla lo spazio del browser.'; }
+    } catch { recoveryStatus.textContent = t('Salvataggio locale non riuscito. Controlla lo spazio del browser.'); }
     finally { saving = false; }
   }
 
@@ -1088,7 +1089,7 @@ function setup() {
       launch(work.solo);
       scroll(work.max > 0 ? max * work.offset / work.max : work.offset);
       lastSnapshot = undefined;
-    } catch { recoveryStatus.textContent = 'Impossibile riprendere questo lavoro locale.'; }
+    } catch { recoveryStatus.textContent = t('Impossibile riprendere questo lavoro locale.'); }
     finally { restoring = false; }
   }
 
@@ -1099,7 +1100,7 @@ function setup() {
       recentWorks = (await archiveTransaction(db, ['works'], 'readonly', tx => tx.objectStore('works').getAll()))
         .sort((a,b) => b.updated - a.updated).slice(0,5);
       renderLocalHistory();
-    } catch { recoveryStatus.textContent = 'Impossibile leggere lo storico locale.'; }
+    } catch { recoveryStatus.textContent = t('Impossibile leggere lo storico locale.'); }
   }
 
   function newLocalWork(file) {
@@ -1112,8 +1113,8 @@ function setup() {
 
   function launch(solo) {
     if (view() === 'text' && $('draft').value !== source.text) loadDraft();
-    if (['slide','both'].includes(view()) && !pdf) return say('Carica prima il PDF delle slide.');
-    if (view() === 'notes' && !notes.length) return say('Carica prima il PowerPoint con le note.');
+    if (['slide','both'].includes(view()) && !pdf) return say(t('Carica prima il PDF delle slide.'));
+    if (view() === 'notes' && !notes.length) return say(t('Carica prima il PowerPoint con le note.'));
     soloMode = lastSoloMode = solo;
     $('screen').classList.toggle('solo-mode', solo);
     $('soloReturn').hidden = !solo;
@@ -1149,7 +1150,7 @@ function setup() {
     source = {text:$('draft').value, html:''};
     $('view').value = 'text';
     refresh();
-    say('Testo caricato.');
+    say(t('Testo caricato.'));
   }
   $('draft').addEventListener('input', () => {
     if (view() === 'text') return;
@@ -1166,7 +1167,7 @@ function setup() {
     if (restoring) return;
     await saveLocal();
     const ext = file.name.split('.').pop().toLowerCase();
-    say('Importazione in corso…');
+    say(t('Importazione in corso…'));
     imports++;
     $('launch').disabled = soloButton.disabled = true;
     try {
@@ -1201,8 +1202,8 @@ function setup() {
       }
       await draw();
       newLocalWork(file);
-      say(!isDeck && ext === 'pdf' && !source.text ? 'PDF caricato come slide. Nessun testo selezionabile trovato.' : 'File caricato. Puoi aprire lo schermo.');
-    } catch { say('Importazione non riuscita. Verifica il formato del file.'); }
+      say(!isDeck && ext === 'pdf' && !source.text ? t('PDF caricato come slide. Nessun testo selezionabile trovato.') : t('File caricato. Puoi aprire lo schermo.'));
+    } catch { say(t('Importazione non riuscita. Verifica il formato del file.')); }
     finally {
       $('launch').disabled = soloButton.disabled = --imports > 0;
       saveLocal();
@@ -1233,7 +1234,7 @@ function setup() {
         const shapes = elements(noteDoc,'sp').filter(shape => elements(shape,'ph').some(ph => ph.getAttribute('type') === 'body'));
         imported.push(shapes.flatMap(shape => elements(shape,'p').map(p => elements(p,'t').map(t => t.textContent).join(''))).join('\n'));
       }
-      if (!imported.length) throw new Error('Il file PowerPoint non contiene slide leggibili.');
+      if (!imported.length) throw new Error(t('Il file PowerPoint non contiene slide leggibili.'));
       return imported;
   }
 
@@ -1245,7 +1246,7 @@ function setup() {
       const instance = new WorkerBrowserConverter({
         ...createWasmPaths(new URL('wasm/', base).href),
         browserWorkerJs:new URL('dist/browser.worker.global.js', base).href,
-        onProgress:info => say(info.message || 'Preparazione del convertitore…')
+        onProgress:info => say(info.message || t('Preparazione del convertitore…'))
       });
       try {
         await instance.initialize();
@@ -1255,7 +1256,7 @@ function setup() {
         throw error;
       }
     }
-    say('Conversione del PowerPoint sul dispositivo…');
+    say(t('Conversione del PowerPoint sul dispositivo…'));
     const result = await converter.convert(new Uint8Array(await file.arrayBuffer()), {outputFormat:'pdf'}, file.name);
     const blob = new Blob([result.data], {type:'application/pdf'});
     const converted = await openPdf(result.data);
@@ -1278,22 +1279,22 @@ function setup() {
     imports++;
     $('launch').disabled = soloButton.disabled = true;
     fileInputs.forEach(element => { element.disabled = true; });
-    say('Conversione del PowerPoint in corso…');
+    say(t('Conversione del PowerPoint in corso…'));
     try {
-      if (file.size > 40 * 1024 * 1024) throw new Error('Il PowerPoint supera il limite di 40 MB.');
+      if (file.size > 40 * 1024 * 1024) throw new Error(t('Il PowerPoint supera il limite di 40 MB.'));
       if ((!window.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined')) {
-        throw new Error('La conversione locale richiede un browser compatibile e una pagina HTTPS. Puoi caricare un PDF in Slide.');
+        throw new Error(t('La conversione locale richiede un browser compatibile e una pagina HTTPS. Puoi caricare un PDF in Slide.'));
       }
       if (!converter && !await confirmConverterDownload()) {
-        say('Download annullato. Puoi caricare un PDF in Slide.');
+        say(t('Download annullato. Puoi caricare un PDF in Slide.'));
         return;
       }
       const imported = await readPowerPointNotes(file);
       try {
-        say('Caricamento del convertitore PowerPoint…');
+        say(t('Caricamento del convertitore PowerPoint…'));
         pdf = await convertLocally(file);
       } catch {
-        throw new Error('Conversione non riuscita su questo dispositivo. Riprova oppure carica un PDF in Slide.');
+        throw new Error(t('Conversione non riuscita su questo dispositivo. Riprova oppure carica un PDF in Slide.'));
       }
       const matching = !pdf || pdf.numPages === imported.length;
       notes = matching ? imported : [];
@@ -1301,11 +1302,11 @@ function setup() {
       $('view').value = 'slide';
       await draw();
       newLocalWork(file);
-      if (!matching) say('Il numero di pagine PDF e di slide PowerPoint è diverso. Verifica la corrispondenza prima di usare le note.');
-      else say(imported.some(Boolean) ? 'Slide caricate. Seleziona Slide + note per mostrare anche le note del relatore.' : 'Slide caricate. Puoi aprire lo schermo.');
+      if (!matching) say(t('Il numero di pagine PDF e di slide PowerPoint è diverso. Verifica la corrispondenza prima di usare le note.'));
+      else say(imported.some(Boolean) ? t('Slide caricate. Seleziona Slide + note per mostrare anche le note del relatore.') : t('Slide caricate. Puoi aprire lo schermo.'));
     } catch (error) {
-      say(error.name === 'TimeoutError' ? 'Tempo di conversione scaduto. Riprova o carica un PDF in Slide.' :
-        error.message || 'Impossibile importare il PowerPoint.');
+      say(error.name === 'TimeoutError' ? t('Tempo di conversione scaduto. Riprova o carica un PDF in Slide.') :
+        error.message || t('Impossibile importare il PowerPoint.'));
     } finally {
       input.value = '';
       fileInputs.forEach(element => { element.disabled = false; });
@@ -1320,7 +1321,7 @@ function setup() {
     if (!file) return;
     if (/\.pptx$/i.test(file.name)) return importPowerPoint(input);
     if (/\.pdf$/i.test(file.name)) return importDocument(file, true);
-    say('Scegli una presentazione PDF o PowerPoint (.pptx).');
+    say(t('Scegli una presentazione PDF o PowerPoint (.pptx).'));
   };
 
   $('pair').onclick = async () => {
@@ -1336,12 +1337,12 @@ function setup() {
       $('qr').src = 'api/qr?link=' + encodeURIComponent(url.href);
       $('pairCode').textContent = session.code;
       $('pairing').hidden = false;
-      $('pair').textContent = 'Genera nuovo codice';
-      say('Il codice è valido per cinque minuti e si usa una sola volta.');
+      $('pair').textContent = t('Genera nuovo codice');
+      say(t('Il codice è valido per cinque minuti e si usa una sola volta.'));
       send = connectPair({...session, role:'screen'}, applyControl, mode => {
         offlineSince = mode === 'offline' ? performance.now() : 0;
-        const label = mode === 'offline' ? 'In attesa del tablet' :
-          mode === 'direct' ? 'Tablet collegato · Diretto' : 'Tablet collegato · Via server';
+        const label = mode === 'offline' ? t('In attesa del tablet') :
+          mode === 'direct' ? t('Tablet collegato · Diretto') : t('Tablet collegato · Via server');
         $('pairStatus').textContent = label;
         $('previewStatus').textContent = label;
         lastState = undefined;
@@ -1350,11 +1351,11 @@ function setup() {
         send = undefined;
         $('pair').disabled = false;
         $('pairing').hidden = true;
-        $('previewStatus').textContent = 'Sessione scaduta. Genera un nuovo codice.';
-        say('Sessione scaduta. Genera un nuovo codice.');
+        $('previewStatus').textContent = t('Sessione scaduta. Genera un nuovo codice.');
+        say(t('Sessione scaduta. Genera un nuovo codice.'));
       });
     } catch {
-      say('Abbinamento non disponibile. Riprova.');
+      say(t('Abbinamento non disponibile. Riprova.'));
     } finally {
       $('pair').disabled = false;
     }
@@ -1363,11 +1364,11 @@ function setup() {
       if (!send) return;
       const count = view() === 'notes' ? notes.length : pdf?.numPages || 0;
       const countdown = countdownUntil ? Math.max(1, Math.ceil((countdownUntil - performance.now()) / 1000)) : 0;
-      const status = (countdown ? 'Avvio tra ' + countdown : playing ? 'In lettura' : 'In pausa') + ' · ' + speed + ' px/s · Font ' + font +
-        (view() === 'text' ? '' : ' · Slide ' + page + '/' + count);
+      const statusData = {countdown, playing, speed, font, view:view(), page, count};
+      const status = readingStatus(statusData);
       const rect = element => ({x:element.offsetLeft, y:element.offsetTop, w:element.clientWidth, h:element.clientHeight});
       const state = {
-        revision:content.revision, view:view(), width:stage.clientWidth, height:stage.clientHeight,
+        statusData, revision:content.revision, view:view(), width:stage.clientWidth, height:stage.clientHeight,
         viewport:rect(viewport), slide:content.image ? rect(slide) : null,
         font, speed, padding:getComputedStyle(copy).padding, offset, max, countdown, open:!soloMode && !$('screen').hidden,
         mirrorX:$('mirrorX').checked, mirrorY:$('mirrorY').checked,
@@ -1450,7 +1451,7 @@ function setup() {
     input.addEventListener('change', () => {
       const file = input.files?.[0];
       if (!file) return;
-      label.textContent = 'Selezionato: ' + file.name;
+      label.textContent = t('Selezionato: ') + file.name;
       zone.classList.add('has-file');
     });
     for (const type of ['dragenter', 'dragover']) {
@@ -1483,9 +1484,9 @@ function setup() {
     const words = shown.trim() ? shown.trim().split(/\s+/).length : 0;
     if (!words) { stats.textContent = ''; return; }
     const minutes = words / 140;
-    stats.textContent = words.toLocaleString('it-IT') + (words === 1 ? ' parola' : ' parole') + ' · circa ' +
-      (minutes < 1 ? 'meno di 1 minuto' : Math.round(minutes) + (Math.round(minutes) === 1 ? ' minuto' : ' minuti')) +
-      ' a voce';
+    stats.textContent = words.toLocaleString(language) + (words === 1 ? t(' parola') : t(' parole')) + t(' · circa ') +
+      (minutes < 1 ? t('meno di 1 minuto') : Math.round(minutes) + (Math.round(minutes) === 1 ? t(' minuto') : t(' minuti'))) +
+      t(' a voce');
   }
   draft.addEventListener('input', updateStats);
   setInterval(updateStats, 600); // il testo importato da file non genera eventi input
@@ -1493,8 +1494,8 @@ function setup() {
 
   // Comandi della vista di controllo: blocchi con etichetta (solo qui; il pannello operatore resta piatto).
   const bar = $('previewControls');
-  for (const [name, keys] of [['Scorri', ['back','forward','home']], ['Velocità', ['slower','faster']],
-      ['Testo', ['smaller','larger']], ['Slide', ['prev','next']]]) {
+  for (const [name, keys] of [[t('Scorri'), ['back','forward','home']], [t('Velocità'), ['slower','faster']],
+      [t('Testo'), ['smaller','larger']], [t('Slide'), ['prev','next']]]) {
     const items = keys.map(key => bar.querySelector('[data-key=' + key + ']')).filter(Boolean);
     if (!items.length) continue;
     const group = document.createElement('div');
@@ -1511,7 +1512,7 @@ function setup() {
     bar.append(group);
   }
   // Con il solo testo le slide non servono: il blocco compare con slide o note.
-  const slideGroup = bar.querySelector('[aria-label=Slide]');
+  const slideGroup = [...bar.children].find(group => group.getAttribute('aria-label') === t('Slide'));
   const syncSlideGroup = () => { if (slideGroup) slideGroup.hidden = $('view').value === 'text'; };
   $('view').addEventListener('change', syncSlideGroup);
   new MutationObserver(syncSlideGroup).observe($('screen'), {attributes:true, attributeFilter:['hidden']});
@@ -1530,9 +1531,9 @@ function setup() {
 
   // Stato di collegamento: punto colorato accanto alle etichette di stato.
   function stateOf(text) {
-    if (/scadut|non disponibile|impossibile|troppi/i.test(text)) return 'bad';
-    if (/in attesa|in corso|riconness/i.test(text)) return 'wait';
-    if (/collegat|diretto|via server/i.test(text)) return 'ok';
+    if (/scadut|non disponibile|impossibile|troppi|expired|unavailable|unable|too many/i.test(text)) return 'bad';
+    if (/in attesa|in corso|riconness|waiting|reconnect|connecting/i.test(text)) return 'wait';
+    if (/collegat|diretto|via server|connected|direct|server relay/i.test(text)) return 'ok';
     return '';
   }
   for (const id of ['pairStatus', 'previewStatus', 'connection']) {
@@ -1547,7 +1548,7 @@ function setup() {
 
   // Pulsante principale: icona e aspetto seguono lo stato avvia/pausa.
   const play = $('screenPlay');
-  const syncPlay = () => { play.dataset.playing = String(play.textContent.trim() === 'Pausa'); };
+  const syncPlay = () => { play.dataset.playing = String(play.textContent.trim() === t('Pausa')); };
   new MutationObserver(syncPlay).observe(play, {childList:true, characterData:true, subtree:true});
   syncPlay();
 
@@ -1608,7 +1609,7 @@ function setupRemoteControls() {
       localStorage.setItem(storageKey, JSON.stringify(mappings));
       last.textContent = message;
     } catch {
-      last.textContent = message + ' La modifica vale fino alla chiusura della pagina.';
+      last.textContent = message + t(' La modifica vale fino alla chiusura della pagina.');
     }
   }
 
@@ -1623,7 +1624,7 @@ function setupRemoteControls() {
       save(label + ' → ' + commandLabels[action.value]);
     } else {
       const assigned = mappings[mode.value][input] || fallback;
-      last.textContent = label + ' → ' + (commandLabels[assigned] || 'non assegnato');
+      last.textContent = label + ' → ' + (commandLabels[assigned] || t('non assegnato'));
     }
     const item = document.createElement('li');
     item.textContent = last.textContent;
@@ -1642,7 +1643,7 @@ function setupRemoteControls() {
   for (const button of document.querySelectorAll('[data-remote-config]')) {
     button.onclick = () => {
       mode.value = profile();
-      last.textContent = 'In attesa di un input.';
+      last.textContent = t('In attesa di un input.');
       log.replaceChildren();
       learning = false;
       dialog.showModal();
@@ -1652,16 +1653,16 @@ function setupRemoteControls() {
   }
   $('remoteMapLearn').onclick = () => {
     learning = true;
-    last.textContent = 'Premi un tasto o muovi uno stick.';
+    last.textContent = t('Premi un tasto o muovi uno stick.');
     dialog.focus();
   };
   $('remoteMapReset').onclick = () => {
     mappings[mode.value] = {};
     learning = false;
     log.replaceChildren();
-    save('Mappatura predefinita ripristinata.');
+    save(t('Mappatura predefinita ripristinata.'));
   };
-  mode.onchange = action.onchange = () => { learning = false; last.textContent = 'In attesa di un input.'; };
+  mode.onchange = action.onchange = () => { learning = false; last.textContent = t('In attesa di un input.'); };
   dialog.onclose = () => { learning = false; };
   addEventListener('keydown', event => {
     if (!dialog.open || event.key === 'Escape' || event.key === 'Tab' ||
@@ -1670,7 +1671,7 @@ function setupRemoteControls() {
     if (event.target.closest('select, button')) return;
     event.preventDefault();
     event.stopPropagation();
-    if (!event.repeat) inspect(keyboardInput(event), 'Tasto ' + (event.key === ' ' ? 'Spazio' : event.key), defaultKey(event.key));
+    if (!event.repeat) inspect(keyboardInput(event), t('Tasto ') + (event.key === ' ' ? t('Spazio') : event.key), defaultKey(event.key));
   }, true);
 
   function poll(time) {
@@ -1697,7 +1698,7 @@ function setupRemoteControls() {
         }
       }
       pad.buttons.forEach((button, index) => {
-        if (button.pressed) input('button:' + index, 'Gamepad · pulsante ' + (index + 1), keyCommands[padKeys[index]], repeatButtons.includes(index));
+        if (button.pressed) input('button:' + index, t('Gamepad · pulsante ') + (index + 1), keyCommands[padKeys[index]], repeatButtons.includes(index));
       });
       pad.axes.forEach((value, index) => {
         const direction = value < 0 ? '-' : '+';
@@ -1705,7 +1706,7 @@ function setupRemoteControls() {
         const magnitude = Math.abs(value);
         // Richiedi un movimento netto per imparare un asse, poi usa una zona morta più piccola.
         const threshold = dialog.open ? .65 : .22;
-        if (magnitude > threshold) input(key, 'Gamepad · asse ' + (index + 1) + ' ' + direction,
+        if (magnitude > threshold) input(key, t('Gamepad · asse ') + (index + 1) + ' ' + direction,
           undefined, false, (magnitude - threshold) / (1 - threshold), true);
       });
     }
@@ -1728,4 +1729,9 @@ function setupRemoteControls() {
       receive = onInput;
     }
   };
+}
+
+function readingStatus({countdown, playing, speed, font, view, page, count}) {
+  return (countdown ? t('Avvio tra ') + countdown : playing ? t('In lettura') : t('In pausa')) + ' · ' + speed + ' px/s · Font ' + font +
+        (view === 'text' ? '' : t(' · Slide ') + page + '/' + count);
 }

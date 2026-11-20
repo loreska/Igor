@@ -31,7 +31,7 @@ runInNewContext(indicators + revealGesture + setup + "\nsetup(); revealMomanOnCl
     addEventListener:(type, listener) => listeners.set(type, listener),
     querySelector:() => null, createElement:() => ({})
   },
-  performance:{now:() => now}, navigator:{bluetooth:{}}, isSecureContext:true,
+  t:value => value, performance:{now:() => now}, navigator:{bluetooth:{}}, isSecureContext:true,
   ResizeObserver:class { observe() {} },
   requestAnimationFrame:frame => frames.push(frame), setInterval:noop, addEventListener:noop,
   keyBlocked:() => false, readingTap:() => ({}), controls:noop, resolveMomanCommand:command => command,

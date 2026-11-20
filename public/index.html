@@ -6,7 +6,7 @@
 <header class="igor-brand">
 <button id="igorIcon" type="button" aria-label="Crediti di Igor" aria-haspopup="dialog"><img src="igor.png" width="82" height="82" alt=""></button>
 <div><h1>Igor</h1><p lang="en">It Goes On Reading</p></div>
-<div class="studio-links"><a class="studio-screen-link" href="?schermo=1">Questo è il tablet? <strong>Modalità schermo</strong></a><a class="studio-support-link" href="https://ko-fi.com/A2O028O4GQ" target="_blank" rel="noopener noreferrer">Ti piace Igor? Offri un caffè!</a></div>
+<div class="studio-links"><label class="studio-language">Lingua <select data-language-picker><option value="auto">Automatica</option><option value="it" lang="it">Italiano</option><option value="en" lang="en">English</option></select></label><a class="studio-screen-link" href="?schermo=1">Questo è il tablet? <strong>Modalità schermo</strong></a><a class="studio-support-link" href="https://ko-fi.com/A2O028O4GQ" target="_blank" rel="noopener noreferrer">Ti piace Igor? Offri un caffè!</a></div>
 </header>
 
 <section class="studio-card local-recovery" aria-labelledby="recoveryTitle">
@@ -75,7 +75,7 @@
 <main id="joinScreen" hidden>
 <section class="studio-card studio-join">
 <img src="igor.png" width="56" height="56" alt="">
-<h1>Schermo del gobbo</h1>
+<h1>Schermo del gobbo</h1><label class="studio-language">Lingua <select data-language-picker><option value="auto">Automatica</option><option value="it" lang="it">Italiano</option><option value="en" lang="en">English</option></select></label>
 <p>Inserisci il codice di 5 caratteri che Igor mostra sul telefono o sul PC, oppure scansiona il QR.</p>
 <form id="joinForm">
 <label for="screenCode">Codice di 5 caratteri</label>
@@ -129,7 +129,7 @@
 <dialog id="igorCredits" aria-labelledby="igorCreditsTitle">
 <img src="igor.png" width="112" height="112" alt="">
 <h2 id="igorCreditsTitle">Igor - It Goes On Reading</h2>
-<p>Un software di Lorenzo Mosna - Lorelive</p>
+<p>Un software di Lorenzo Mosna - Lorelive</p><p>In italiano, «gobbo» indica una persona con la gobba e, in televisione, il suggeritore che reggeva i cartelli del copione stando curvo sotto la telecamera. Oggi indica anche il teleprompter.</p>
 <p><a href="https://www.lorelive.org" target="_blank" rel="noopener noreferrer">www.lorelive.org</a></p>
 <p>Per suggerimenti: <a href="mailto:info@lorelive.org">info@lorelive.org</a></p>
 <p>Igor è gratuito. Se potete, una donazione mi aiuterà a mantenerlo online!</p>
@@ -140,4 +140,4 @@
 <form method="dialog"><h2 id="igorGameTitle">WHEREPROMTER? THEREPROMPTER!</h2><button type="submit" autofocus>Chiudi gioco</button></form>
 <div id="igorGameFrame"></div>
 </dialog>
-</body></html>
+<script src="i18n.js"></script></body></html>
