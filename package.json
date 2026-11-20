@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server.cjs",
-    "test": "node test/assets.cjs && node test/relay.cjs"
+    "test": "node test/playback.cjs && node test/assets.cjs && node test/relay.cjs && node test/limits.cjs"
   },
   "dependencies": {
     "@matbee/libreoffice-converter": "2.7.2",

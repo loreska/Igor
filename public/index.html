@@ -1,54 +1,143 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Igor · It Goes On Reading</title><link rel="icon" type="image/png" href="igor.png"><link rel="apple-touch-icon" href="igor.png"><link rel="stylesheet" href="style.css"><script src="mammoth.js" defer></script><script src="zip.js" defer></script><script src="app.js" type="module"></script></head>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#12161b"><meta name="color-scheme" content="dark"><title>Igor · It Goes On Reading</title><link rel="icon" type="image/png" href="igor.png"><link rel="apple-touch-icon" href="igor.png"><link rel="stylesheet" href="style.css"><script src="mammoth.js" defer></script><script src="zip.js" defer></script><script src="app.js" type="module"></script></head>
 <body>
+<noscript><p class="noscript">Igor ha bisogno di JavaScript per funzionare.</p></noscript>
 <main id="setup">
 <header class="igor-brand">
-<img src="igor.png" width="82" height="82" alt="">
+<button id="igorIcon" type="button" aria-label="Crediti di Igor" aria-haspopup="dialog"><img src="igor.png" width="82" height="82" alt=""></button>
 <div><h1>Igor</h1><p lang="en">It Goes On Reading</p></div>
+<div class="studio-links"><a class="studio-screen-link" href="?schermo=1">Questo è il tablet? <strong>Modalità schermo</strong></a><a class="studio-support-link" href="https://ko-fi.com/A2O028O4GQ" target="_blank" rel="noopener noreferrer">Ti piace Igor? Offri un caffè!</a></div>
 </header>
-<p>Carica il materiale e controlla il gobbo da questo dispositivo.</p>
-<p><a href="?schermo=1">Usa questo dispositivo come schermo del gobbo</a></p>
-<div class="row"><label>Copione (Word, PDF o testo) <input id="file" type="file" accept=".txt,.docx,.pdf"></label><label>Slide (PDF consigliato, oppure PPTX) <input id="slidesFile" type="file" accept=".pdf,.pptx"></label></div>
+
+<section class="studio-card local-recovery" aria-labelledby="recoveryTitle">
+<h2 id="recoveryTitle">Riprendi da dove eri</h2>
+<button id="resumeLocal" type="button" class="studio-primary" hidden>Riprendi ultima sessione</button>
+<details id="localRecent" hidden><summary>Lavori recenti</summary><ul id="localRecentList"></ul></details>
+<p id="localRecoveryStatus" role="status"></p>
+</section>
+
+<div class="studio-workspace">
+<div class="studio-col">
+<section class="studio-card studio-material" aria-labelledby="materialTitle">
+<h2 id="materialTitle"><span class="step" aria-hidden="true">1</span>Materiale</h2>
+<div class="studio-files">
+<label class="dropzone" data-drop="file"><span class="dz-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg></span><span class="dz-title">Copione</span><small>Word, PDF o testo<span class="dz-drag"> · trascina qui o tocca</span></small><span class="dz-file"></span><input id="file" type="file" accept=".txt,.docx,.pdf"></label>
+<label class="dropzone" data-drop="slidesFile"><span class="dz-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 21h8M12 16v5"/></svg></span><span class="dz-title">Slide</span><small>PDF o PowerPoint<span class="dz-drag"> · trascina qui o tocca</span></small><span class="dz-file"></span><input id="slidesFile" type="file" accept=".pdf,.pptx"></label>
+</div>
 <dialog id="pptxDownload" aria-labelledby="pptxTitle"><form method="dialog">
 <h2 id="pptxTitle">Attiva il convertitore PowerPoint</h2>
 <p>Al primo utilizzo il browser scarica circa <strong>248 MB</strong>. Se i dati sono ancora in cache, il browser li riutilizza. Il PowerPoint viene convertito su questo dispositivo.</p>
 <p>Su hotspot puoi annullare e caricare un PDF, oppure scaricare il convertitore quando sei su Wi-Fi.</p>
-<div class="row"><button value="cancel" autofocus>Annulla</button><button value="download">Scarica e converti</button></div>
+<div class="row"><button value="cancel" autofocus>Annulla</button><button value="download" class="studio-primary">Scarica e converti</button></div>
 </form></dialog>
-<details><summary>Aggiungi note a una presentazione PDF</summary><label>Note del relatore (.pptx) <input id="notesFile" type="file" accept=".pptx"></label></details>
-<textarea id="draft" rows="5" placeholder="Incolla o scrivi il copione"></textarea>
-<div class="row"><button id="apply">Carica testo</button><label><input type="checkbox" id="styled" checked> Mantieni formattazione Word</label><label>Vista <select id="view"><option value="text">Gobbo</option><option value="slide">Slide</option><option value="both">Slide + note</option><option value="notes">Solo note</option></select></label></div>
-<div class="row"><label><input type="checkbox" id="mirrorX"> Specchia orizzontalmente</label><label><input type="checkbox" id="mirrorY"> Specchia verticalmente</label><button id="launch">Apri anteprima</button><button id="pair">Abbina schermo</button></div>
-<div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Inserisci sul tablet il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
+<label for="draft" class="studio-label">Testo del gobbo</label><textarea id="draft" rows="8" placeholder="Incolla o scrivi qui il copione, oppure carica un file qui sopra"></textarea>
+<p id="draftStats" class="field-hint" aria-live="polite"></p>
+<div class="field-row"><label for="view" class="studio-label">Cosa mostrare</label><select id="view"><option value="text">Solo testo (gobbo)</option><option value="slide">Slide</option><option value="both">Slide + note</option><option value="notes">Solo note</option></select></div>
 <p id="message" role="status"></p>
-<div id="localControls"></div>
+<div id="localControls" hidden></div>
+</section>
+
+<section id="readingOptions" class="studio-card studio-options" aria-labelledby="optionsTitle">
+<h2 id="optionsTitle"><span class="step" aria-hidden="true">2</span>Opzioni di lettura</h2>
+<div class="chips"><label class="chip"><input type="checkbox" id="styled" checked><span>Mantieni formattazione Word</span></label></div>
+<fieldset class="studio-mirror"><legend>Specchiatura <small>per vetro o beam splitter</small></legend><div class="chips"><label class="chip"><input type="checkbox" id="mirrorX"><span>Orizzontale</span></label><label class="chip"><input type="checkbox" id="mirrorY"><span>Verticale</span></label></div></fieldset>
+<div id="momanSetupControls" hidden><button id="momanSetup" type="button">Collega Moman</button><output id="momanSetupStatus" role="status"></output></div>
+<p class="remote-test">Usi un pedale, un clicker o un gamepad Bluetooth? <button data-remote-config type="button">Configura telecomando</button></p>
+</section>
+</div>
+
+<section class="studio-card studio-session" aria-labelledby="sessionTitle">
+<h2 id="sessionTitle"><span class="step" aria-hidden="true">3</span>Avvia la lettura</h2>
+<div class="path">
+<h3>Con uno schermo separato</h3>
+<p class="hint">Questo dispositivo è il telecomando, il tablet davanti al lettore mostra il testo.</p>
+<button id="pair" type="button">Abbina schermo</button>
+<div id="pairing" hidden><img id="qr" alt="QR per lo schermo del gobbo"><div><p>Sul tablet inserisci il codice oppure scansiona il QR.</p><output id="pairCode"></output><p id="pairStatus" role="status"></p><a id="pairLink" target="_blank" rel="noopener">Apri lo schermo in un’altra scheda</a></div></div>
+<button id="launch" class="studio-primary">Avvia il gobbo</button>
+</div>
+<div class="path-divider"><span>oppure</span></div>
+<div class="path">
+<h3>Su questo dispositivo</h3>
+<p class="hint">Leggi direttamente da qui. Un tocco avvia o ferma, due tocchi aprono le opzioni.</p>
+<button id="soloLaunch">Leggi su questo dispositivo</button>
+</div>
+</section>
+</div>
 <footer class="igor-quote"><q>Quale gobba?</q></footer>
 </main>
+
+<section id="screen" hidden aria-labelledby="gobboTitle">
+<header class="gobbo-header"><div><h1 id="gobboTitle">Controllo gobbo</h1><output id="previewStatus" role="status"></output></div><button id="exit">← Torna al materiale</button></header>
+<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div><div class="reading-timer" id="readingTimer" aria-label="Tempo trascorso" hidden></div></div>
+<div id="previewBar"><div class="row"><button id="screenPlay">Avvia</button><button type="button" data-remote-config>Configura telecomando</button><label class="chip"><input id="showReadingTimer" type="checkbox"><span>Mostra timer</span></label><button id="resetReadingTimer" title="Riporta il timer a 00:00">Azzera</button></div><div id="previewControls"></div><p class="kbd-hint">Tastiera: <kbd>Spazio</kbd> avvia/pausa · <kbd>↑</kbd><kbd>↓</kbd> scorri · <kbd>←</kbd><kbd>→</kbd> slide · <kbd>+</kbd><kbd>−</kbd> velocità</p></div>
+</section>
+
 <main id="joinScreen" hidden>
+<section class="studio-card studio-join">
+<img src="igor.png" width="56" height="56" alt="">
 <h1>Schermo del gobbo</h1>
+<p>Inserisci il codice di 5 caratteri che Igor mostra sul telefono o sul PC, oppure scansiona il QR.</p>
 <form id="joinForm">
 <label for="screenCode">Codice di 5 caratteri</label>
-<div class="row"><input id="screenCode" type="text" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocomplete="off" autocapitalize="characters" spellcheck="false" required><button type="submit">Collega</button></div>
+<div class="join-row"><input id="screenCode" type="text" minlength="5" maxlength="5" pattern="[A-Za-z0-9]{5}" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" required placeholder="ABCDE"><button class="studio-primary" type="submit">Collega schermo</button></div>
 </form>
 <p id="joinStatus" role="status"></p>
-<a href="./">Torna ai comandi</a>
+<a href="./">Carica materiale su questo dispositivo</a>
+</section>
 </main>
+
 <main id="remote" hidden>
 <header class="igor-operator"><img src="igor.png" width="30" height="30" alt=""><strong>Igor</strong><span>Pannello operatore</span></header>
 <p id="connection" role="status">Connessione in corso…</p>
 <p id="waiting" hidden>Lo schermo del gobbo non è ancora aperto sul tablet.</p>
-<div id="viewerActions" hidden><button id="viewerFull">Schermo intero</button><a href="?schermo=1">Cambia collegamento</a></div>
+
 <div id="monitor" aria-label="Anteprima gobbo, trascina per scorrere">
 <div id="monitorStage"><img id="monitorSlide" alt="" hidden><div id="monitorViewport"><article class="script" id="monitorCopy"></article><div class="reading-line"></div></div></div>
 <div class="countdown" id="remoteCountdown" hidden></div>
+<div class="reading-timer" id="remoteReadingTimer" aria-label="Tempo trascorso" hidden></div>
 </div>
 <div id="remoteControls"></div>
 <details id="remoteEditor"><summary>Modifica testo</summary>
 <textarea id="remoteDraft" rows="7" aria-label="Testo del gobbo"></textarea>
-<button id="sendEdit">Invia correzione</button> <span id="editStatus" role="status"></span>
+<div class="row"><button id="sendEdit">Invia correzione</button><span id="editStatus" role="status"></span></div>
 </details></main>
-<section id="screen" hidden aria-label="Schermo gobbo">
-<div id="previewArea"><div id="stage"><canvas id="slide"></canvas><div id="viewport"><article class="script" id="copy"></article><div class="reading-line"></div></div></div><div class="countdown" id="countdown" hidden></div></div>
-<div id="previewBar"><output id="previewStatus" role="status"></output><div id="previewControls"></div><div class="row"><button id="screenPlay">Avvia</button><button id="exit">Materiale e impostazioni</button></div></div>
-</section>
+
+<dialog id="remoteTest" aria-labelledby="remoteTestTitle" tabindex="-1">
+<form method="dialog" class="remote-test-box">
+<h2 id="remoteTestTitle">Configura telecomando</h2>
+<p>Premi un tasto o muovi uno stick per vedere cosa riceve Igor. Le assegnazioni si salvano in questo browser.</p>
+<label>Modalità <select id="remoteMapMode"><option value="text">Testo</option><option value="slide">Slide</option></select></label>
+<label>Azione <select id="remoteMapAction"></select></label>
+<div class="row"><button id="remoteMapLearn" type="button">Premi un tasto per assegnarlo</button><button id="remoteMapReset" type="button">Ripristina predefiniti</button></div>
+<output id="remoteTestLast" role="status">In attesa di un input.</output>
+<ol id="remoteTestLog" aria-label="Ultimi input"></ol>
+<p class="field-hint">Per i gamepad, premi almeno un pulsante dopo il collegamento.</p>
+<div class="row"><button class="studio-primary" type="submit">Chiudi</button></div>
+</form></dialog>
+
+<dialog id="viewerSettings" aria-labelledby="viewerSettingsTitle">
+<form method="dialog" class="viewer-settings">
+<h2 id="viewerSettingsTitle">Opzioni di lettura</h2>
+<button type="button" data-remote-config>Configura telecomando</button>
+<div class="viewer-setting"><span>Dimensione testo</span><button type="button" data-gobbo-command="smaller" aria-label="Riduci dimensione testo">−</button><output id="viewerFont"></output><button type="button" data-gobbo-command="larger" aria-label="Aumenta dimensione testo">+</button></div>
+<div class="viewer-setting"><span>Velocità</span><button type="button" data-gobbo-command="slower" aria-label="Rallenta">−</button><output id="viewerSpeed"></output><button type="button" data-gobbo-command="faster" aria-label="Accelera">+</button></div>
+<fieldset class="studio-mirror"><legend>Specchiatura</legend><div class="chips"><label class="chip"><input type="checkbox" id="viewerMirrorX"><span>Orizzontale</span></label><label class="chip"><input type="checkbox" id="viewerMirrorY"><span>Verticale</span></label></div></fieldset>
+<div id="momanControls" hidden><button id="momanView" type="button">Collega Moman</button><output id="momanViewStatus" role="status"></output></div>
+<div class="chips"><label class="chip"><input type="checkbox" id="viewerTimer"><span>Mostra timer</span></label></div>
+<div class="row"><button class="studio-primary" type="submit">Chiudi opzioni</button><button id="soloReturn" type="button" hidden>Torna al materiale</button></div>
+</form></dialog>
+<dialog id="igorCredits" aria-labelledby="igorCreditsTitle">
+<img src="igor.png" width="112" height="112" alt="">
+<h2 id="igorCreditsTitle">Igor - It Goes On Reading</h2>
+<p>Un software di Lorenzo Mosna - Lorelive</p>
+<p><a href="https://www.lorelive.org" target="_blank" rel="noopener noreferrer">www.lorelive.org</a></p>
+<p>Per suggerimenti: <a href="mailto:info@lorelive.org">info@lorelive.org</a></p>
+<p>Igor è gratuito. Se potete, una donazione mi aiuterà a mantenerlo online!</p>
+<a class="studio-support-link" href="https://ko-fi.com/A2O028O4GQ" target="_blank" rel="noopener noreferrer">Ti piace Igor? Offri un caffè!</a>
+<form method="dialog"><button type="submit" autofocus>Chiudi</button></form>
+</dialog>
+<dialog id="igorGame" aria-labelledby="igorGameTitle">
+<form method="dialog"><h2 id="igorGameTitle">WHEREPROMTER? THEREPROMPTER!</h2><button type="submit" autofocus>Chiudi gioco</button></form>
+<div id="igorGameFrame"></div>
+</dialog>
 </body></html>

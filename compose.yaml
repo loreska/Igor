@@ -1,7 +1,30 @@
 services:
   gobbo:
     build: .
+    init: true
     restart: unless-stopped
     mem_limit: ${IGOR_MEMORY_LIMIT:-100m}
+    memswap_limit: ${IGOR_MEMORY_LIMIT:-100m}
+    pids_limit: 64
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    environment:
+      IGOR_MAX_SESSIONS: ${IGOR_MAX_SESSIONS:-300}
+      IGOR_IP_SESSIONS: ${IGOR_IP_SESSIONS:-100}
+      IGOR_IP_SOCKETS: ${IGOR_IP_SOCKETS:-200}
     ports:
       - "127.0.0.1:8787:8787"

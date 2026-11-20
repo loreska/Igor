@@ -1,3 +1,4 @@
+process.env.IGOR_IP_SESSIONS='0';process.env.IGOR_IP_SOCKETS='0';
 const {createServer}=require('../server.cjs');
 const {WebSocket}=require('ws');
 const assert=require('node:assert/strict');

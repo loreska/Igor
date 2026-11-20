@@ -4,7 +4,10 @@ const path = require('node:path');
 const { randomBytes, randomInt } = require('node:crypto');
 const { createReadStream } = require('node:fs');
 const { pipeline } = require('node:stream/promises');
+const { attachRelay, clientIp, limits } = require('./relay.cjs');
 const sessions = new Map();
+const creations = new Map();
+let relay;
 const codes = new Map();
 const token = () => randomBytes(24).toString('base64url');
 const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -13,6 +16,7 @@ const files = {
   'app.js': ['public/app.js', 'text/javascript'],
   'style.css': ['public/style.css', 'text/css'],
   'igor.png': ['public/igor.png', 'image/png'],
+  'whereprompter.html': ['public/whereprompter.html', 'text/html'],
   'mammoth.js': ['node_modules/mammoth/mammoth.browser.min.js', 'text/javascript'],
   'zip.js': ['node_modules/jszip/dist/jszip.min.js', 'text/javascript'],
   'pdf.mjs': ['node_modules/pdfjs-dist/build/pdf.min.mjs', 'text/javascript'],
@@ -22,6 +26,7 @@ const ttl = 15 * 60_000;
 setInterval(() => {
   for (const [id, s] of sessions) if (!s.screen && !s.operator && Date.now() - s.seen > ttl) sessions.delete(id);
   for (const [code, entry] of codes) if (entry.expires <= Date.now()) codes.delete(code);
+  for (const [ip, entry] of creations) if (entry.reset <= Date.now()) creations.delete(ip);
 }, 60_000).unref();
 
 async function handleRequest(req, res) {
@@ -48,6 +53,10 @@ async function handleRequest(req, res) {
       res.writeHead(200, {'Content-Type':mime, 'Content-Length':info.size});
       await pipeline(createReadStream(file, {highWaterMark:32 * 1024}), res);
       return;
+    }
+    if (req.method === 'GET' && route === 'healthz') {
+      return json(200, {ok:true, sessions:sessions.size, sockets:relay?.sockets() ?? 0,
+        rssMiB:Math.round(process.memoryUsage.rss() / 1048576)});
     }
     if (req.method === 'GET' && route === 'api/qr') {
       const link = url.searchParams.get('link') || '';
@@ -86,7 +95,14 @@ async function handleRequest(req, res) {
     }
     if (req.method !== 'POST') return json(404, {});
     if (route === 'api/new') {
-      if (sessions.size >= 1000) return json(503, {});
+      if (sessions.size >= limits.sessions) return json(503, {});
+      if (limits.ipSessions) {
+        const ip = clientIp(req);
+        const now = Date.now();
+        let entry = creations.get(ip);
+        if (!entry || entry.reset <= now) { entry = {count:0, reset:now + 10 * 60_000}; creations.set(ip, entry); }
+        if (++entry.count > limits.ipSessions) return json(429, {});
+      }
       const id = token();
       const host = token();
       sessions.set(id, {host, seen:Date.now(), screen:null, operator:null});
@@ -106,10 +122,19 @@ async function handleRequest(req, res) {
 
 function createServer() {
   const server = http.createServer({highWaterMark:16 * 1024}, handleRequest);
-  require('./relay.cjs').attachRelay(server, sessions, codes);
+  relay = attachRelay(server, sessions, codes);
   return server;
 }
 if (require.main === module) {
-  createServer().listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1');
+  const server = createServer();
+  server.listen(Number(process.env.PORT || 8787), process.env.HOST || '127.0.0.1');
+  // SIGTERM (docker stop): chiude i collegamenti con garbo ed esce subito invece di attendere il timeout.
+  for (const signal of ['SIGTERM', 'SIGINT']) {
+    process.on(signal, () => {
+      relay?.shutdown();
+      server.close();
+      setTimeout(() => process.exit(0), 500).unref();
+    });
+  }
 }
 module.exports = { handleRequest, createServer };
