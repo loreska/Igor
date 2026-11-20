@@ -1,5 +1,9 @@
 # Igor · It Goes On Reading
 
+Igor, interpretato da Marty Feldman in Frankenstein Junior di Mel Brooks, ha una delle gobbe più famose della storia del cinema. «Gobbo» era anche il soprannome del suggeritore che, accovacciato sotto la telecamera, reggeva i cartelli con le battute. Oggi, in italiano, chiamiamo così il teleprompter.
+
+Ho creato Igor per risolvere un problema che incontro spesso quando giro da solo. Da dietro la telecamera è difficile vedere cosa scorre sul gobbo. Con Igor posso visualizzare sul telefono lo stesso testo che vede chi è davanti all’obiettivo e seguire la lettura mentre continuo a girare.
+
 [English README](README.en.md)
 
 La lingua dell’interfaccia segue le preferenze del browser. **Lingua** permette di scegliere **Italiano**, **English** o **Automatica**. Il cambio ricarica la pagina. La scelta si salva su ciascun dispositivo. Per condividere una lingua specifica usa `?lang=it` o `?lang=en`.
