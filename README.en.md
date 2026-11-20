@@ -2,7 +2,9 @@
 
 [Italian README](README.md) · [Open Igor](https://igor.lorelive.org/)
 
-Igor is a browser-based teleprompter by Lorenzo Mosna / Lorelive. In Italian, *gobbo* can mean a person with a hunched back. In television, it also referred to the prompter who crouched below the camera holding up cue cards. Today the word also means teleprompter.
+Igor is a browser-based teleprompter by Lorenzo Mosna / Lorelive. Igor, played by Marty Feldman in Mel Brooks’s Young Frankenstein, has one of the most famous humps in film history. In Italian, gobbo means “hunchback.” It was also the nickname for the prompter who crouched beneath the camera, holding up cue cards. Today, it’s what Italians call a teleprompter.
+
+I built Igor to solve a problem I often run into when filming solo. From behind the camera, it’s hard to see what’s on the teleprompter. Igor mirrors the teleprompter display on my phone, so I can see exactly what the person in front of the camera is reading while I keep filming.
 
 ## Start reading
 
